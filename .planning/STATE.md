@@ -1,7 +1,7 @@
 # Project State
 
 ## Current Phase
-Phase 0 — Not started
+Phase 1 — Backend Foundation (context gathered, ready for planning)
 
 ## Project Reference
 See: .planning/PROJECT.md
@@ -13,7 +13,7 @@ See: .planning/PROJECT.md
 
 | # | Phase | Status | Notes |
 |---|-------|--------|-------|
-| 1 | Backend Foundation | Not started | FastAPI scaffold, poker math engine, LiteLLM wiring, env vars |
+| 1 | Backend Foundation | Context gathered | FastAPI scaffold, poker math engine, LiteLLM wiring, env vars |
 | 2 | Game State Machine | Not started | Full Hold'em flow runnable to console; no LLMs; mock decisions |
 | 3 | SSE Broadcast | Not started | Real-time push to all clients; late-joiner snapshot; heartbeat |
 | 4 | LLM Integration | Not started | 4 AI players, archetypes, guided decisions, streaming reasoning |
@@ -60,6 +60,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** ROADMAP.md and STATE.md created — 2026-05-01
-**Next action:** Begin Phase 1 planning with `/gsd-plan-phase 1`
-**Resumption note:** If resuming mid-session, check Phase Status table above for current position, then read the active phase detail in ROADMAP.md.
+**Last action:** Phase 1 context gathered — 2026-05-02
+**Next action:** `/gsd-plan-phase 1`
+**Resumption note:** If resuming mid-session, check Phase Status table above for current position, then read `.planning/phases/01-backend-foundation/01-CONTEXT.md`.
