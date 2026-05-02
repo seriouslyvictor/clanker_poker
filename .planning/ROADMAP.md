@@ -17,6 +17,12 @@
 **Goal**: A working Python/FastAPI project with a provably correct poker math engine and all LLM provider credentials wired through LiteLLM.
 **Depends on**: Nothing (first phase)
 **Requirements**: POKER-03, POKER-04, INFRA-01, INFRA-02, INFRA-03
+**Plans:** 3 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — FastAPI scaffold: pyproject.toml, config.py, main.py, health endpoint
+- [ ] 01-02-PLAN.md — Poker math engine: treys hand evaluator + Monte Carlo equity calculator + tests
+- [ ] 01-03-PLAN.md — LiteLLM provider wiring: .env.example + provider integration tests
 
 **Success Criteria** (what must be TRUE):
 1. Running `python -m pytest` passes tests covering all 9 hand ranks, kicker tiebreakers, and board counterfeiting — no hand evaluation bug survives
@@ -124,7 +130,7 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Backend Foundation | 0/? | Not started | - |
+| 1. Backend Foundation | 0/3 | Planned | - |
 | 2. Game State Machine | 0/? | Not started | - |
 | 3. SSE Broadcast | 0/? | Not started | - |
 | 4. LLM Integration | 0/? | Not started | - |
