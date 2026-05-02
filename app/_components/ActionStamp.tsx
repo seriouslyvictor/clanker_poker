@@ -1,6 +1,6 @@
 'use client';
 
-import type { ActionType } from '@/lib/game-logic';
+import type { ActionType } from './types';
 
 const CFG: Record<ActionType, { label: string; bg: string; shadow: string; rot: string }> = {
   fold:  { label: 'FOLD',   bg: 'rgb(239,70,55)',  shadow: 'rgb(140,30,15)',  rot: '-10deg' },

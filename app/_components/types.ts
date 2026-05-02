@@ -1,5 +1,7 @@
-import type { Card, ActionType } from '@/lib/game-logic';
 import type { ModelId, VoiceMode, AtmosphereMode, TempoMode } from '@/lib/constants';
+
+export type Card = { s: string; r: string };
+export type ActionType = 'fold' | 'call' | 'raise' | 'check';
 
 export interface Player {
   id: ModelId;

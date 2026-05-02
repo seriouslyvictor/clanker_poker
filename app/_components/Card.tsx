@@ -1,6 +1,6 @@
 'use client';
 
-import type { Card as CardType } from '@/lib/game-logic';
+import type { Card as CardType } from './types';
 
 interface CardProps {
   card?: CardType;

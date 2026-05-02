@@ -1,26 +1,16 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import type { Settings } from './types';
-import { MODELS, THEMES } from '@/lib/constants';
+import { THEMES } from '@/lib/constants';
 import Game from './Game';
 import TweaksPanel from './TweaksPanel';
 
 const DEFAULT_SETTINGS: Settings = { tempo: 'normal', voice: 'balanced', atmosphere: 'felt' };
 
 export default function PokerApp() {
-  const [round, setRound] = useState(0);
-  const [chips, setChips] = useState<Record<string, number>>(
-    Object.fromEntries(MODELS.map(m => [m.id, 1000]))
-  );
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [tweaksVisible, setTweaksVisible] = useState(false);
-
-  const tempoRef = useRef(settings.tempo);
-  const voiceRef = useRef(settings.voice);
-
-  useEffect(() => { tempoRef.current = settings.tempo; }, [settings.tempo]);
-  useEffect(() => { voiceRef.current = settings.voice; }, [settings.voice]);
 
   const onChange = (key: keyof Settings, val: string) => {
     setSettings(prev => ({ ...prev, [key]: val }));
@@ -30,7 +20,6 @@ export default function PokerApp() {
 
   return (
     <>
-      {/* Tweaks toggle button — bottom right */}
       <button
         onClick={() => setTweaksVisible(v => !v)}
         style={{
@@ -48,14 +37,7 @@ export default function PokerApp() {
         ⚙ TWEAKS
       </button>
 
-      <Game
-        key={round}
-        initChips={chips}
-        tempoRef={tempoRef}
-        voiceRef={voiceRef}
-        theme={theme}
-        onEnd={fc => { setChips(fc); setRound(r => r + 1); }}
-      />
+      <Game theme={theme} />
 
       <TweaksPanel
         settings={settings}
