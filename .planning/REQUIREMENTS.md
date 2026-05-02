@@ -12,7 +12,7 @@
 
 ### AI — Behavior & Reasoning
 
-- [ ] **AI-01**: 4 LLM players integrated — GPT-4o (OpenAI), Gemini (Google), Claude (Anthropic), Llama 3 (via LiteLLM) — each called sequentially per decision phase
+- [ ] **AI-01**: N configurable LLM players (default 4) — player roster defined in config/env vars, not hardcoded; initial defaults are GPT-4o, Gemini, Claude, Llama 3; any OpenAI-compatible or LiteLLM-supported model can be swapped in without code changes; players called sequentially per decision phase
 - [ ] **AI-02**: Random archetype assigned to each player at game start — archetype defines personality label + behavioral bias parameters (hand looseness, raise frequency, bluff frequency, tilt threshold)
 - [ ] **AI-03**: At each decision point, LLM receives structured math context — hand strength, pot odds, win probability, available actions (fold / call / raise / reraise with amounts), current pot, community cards, archetype description — and responds with a structured decision + reasoning text
 - [ ] **AI-04**: Code validates LLM decision response — if response is malformed, times out (>8s), or picks an invalid action, fallback to deterministic decision based on hand strength + archetype bias
@@ -70,11 +70,30 @@ The original stack research assumed Node.js + PM2. User preference is Python bac
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| POKER-01 through POKER-05 | TBD | Not started |
-| AI-01 through AI-06 | TBD | Not started |
-| STREAM-01 through STREAM-04 | TBD | Not started |
-| VIEWER-01 through VIEWER-03 | TBD | Not started |
-| INFRA-01 through INFRA-05 | TBD | Not started |
+| POKER-01 | Phase 2 | Not started |
+| POKER-02 | Phase 2 | Not started |
+| POKER-03 | Phase 1 | Not started |
+| POKER-04 | Phase 1 | Not started |
+| POKER-05 | Phase 2 | Not started |
+| AI-01 | Phase 4 | Not started |
+| AI-02 | Phase 4 | Not started |
+| AI-03 | Phase 4 | Not started |
+| AI-04 | Phase 4 | Not started |
+| AI-05 | Phase 4 | Not started |
+| AI-06 | Phase 4 | Not started |
+| STREAM-01 | Phase 3 | Not started |
+| STREAM-02 | Phase 3 | Not started |
+| STREAM-03 | Phase 3 | Not started |
+| STREAM-04 | Phase 5 | Not started |
+| VIEWER-01 | Phase 6 | Not started |
+| VIEWER-02 | Phase 6 | Not started |
+| VIEWER-03 | Phase 6 | Not started |
+| INFRA-01 | Phase 1 | Not started |
+| INFRA-02 | Phase 1 | Not started |
+| INFRA-03 | Phase 1 | Not started |
+| INFRA-04 | Phase 5 | Not started |
+| INFRA-05 | Phase 4 | Not started |
 
 ---
 *Created: 2026-05-01 after requirements gathering*
+*Traceability updated: 2026-05-01 after roadmap creation*
