@@ -1,19 +1,19 @@
 # Project State
 
 ## Current Phase
-Phase 1 — Backend Foundation (context gathered, ready for planning)
+Phase 1 — Backend Foundation (executing — plan 01 complete)
 
 ## Project Reference
 See: .planning/PROJECT.md
 
 **Core value:** Spectators watch compelling, human-feeling AI poker with transparent reasoning — system never runs without viewers.
-**Current focus:** Initialization complete, ready for Phase 1
+**Current focus:** Phase 1 executing — 1/3 plans complete
 
 ## Phase Status
 
 | # | Phase | Status | Notes |
 |---|-------|--------|-------|
-| 1 | Backend Foundation | Context gathered | FastAPI scaffold, poker math engine, LiteLLM wiring, env vars |
+| 1 | Backend Foundation | In progress (1/3 plans done) | FastAPI scaffold done; poker math engine next |
 | 2 | Game State Machine | Not started | Full Hold'em flow runnable to console; no LLMs; mock decisions |
 | 3 | SSE Broadcast | Not started | Real-time push to all clients; late-joiner snapshot; heartbeat |
 | 4 | LLM Integration | Not started | 4 AI players, archetypes, guided decisions, streaming reasoning |
@@ -40,6 +40,8 @@ See: .planning/PROJECT.md
 - Predictions: localStorage only in v1, no backend persistence.
 - Poker rules: simplified — single main pot, no side pots.
 - LLM calls: sequential per decision phase (not parallel) to start.
+- Python 3.13.13 used (no pin) — treys 0.1.8 pure Python, compatible with 3.13; uv python pin 3.12 not needed.
+- config.py is provider-agnostic: player_models list[str] holds LiteLLM model strings; no per-provider API key fields in Settings.
 
 ### Architecture Notes
 - Frontend is already built. Game.tsx renders MOCK_STATE. Phase 5 replaces it.
@@ -60,6 +62,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 1 context gathered — 2026-05-02
-**Next action:** `/gsd-plan-phase 1`
-**Resumption note:** If resuming mid-session, check Phase Status table above for current position, then read `.planning/phases/01-backend-foundation/01-CONTEXT.md`.
+**Last action:** Phase 1 Plan 01 executed — FastAPI scaffold with CORS, health endpoint, pydantic-settings config — 2026-05-03
+**Next action:** Execute Plan 02 (poker math engine: treys + Monte Carlo equity + tests)
+**Resumption note:** Plan 01 complete (commits a993ccc, 63f5415). backend/ has pyproject.toml, uv.lock, app/{config,main,api/health}.py. GET /health returns 200. Python 3.13.13 used without pin — treys compatible.
