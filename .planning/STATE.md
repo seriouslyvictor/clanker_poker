@@ -1,20 +1,20 @@
 # Project State
 
 ## Current Phase
-Phase 1 — Backend Foundation (all 3 plans complete — pending verification)
+Phase 2 — Game State Machine (executing — Wave 1 complete, 3 plans remaining)
 
 ## Project Reference
 See: .planning/PROJECT.md
 
 **Core value:** Spectators watch compelling, human-feeling AI poker with transparent reasoning — system never runs without viewers.
-**Current focus:** Phase 1 verification
+**Current focus:** Phase 2 — Game State Machine
 
 ## Phase Status
 
 | # | Phase | Status | Notes |
 |---|-------|--------|-------|
-| 1 | Backend Foundation | All plans complete (3/3) — verifying | FastAPI scaffold, poker math engine, LiteLLM wiring all done |
-| 2 | Game State Machine | Not started | Full Hold'em flow runnable to console; no LLMs; mock decisions |
+| 1 | Backend Foundation | Complete ✓ | FastAPI scaffold, poker math engine, LiteLLM wiring — human UAT passed 2026-05-03 |
+| 2 | Game State Machine | In progress ◆ | Wave 1 complete (02-01, 02-02) — game.py, session.py, tests remain |
 | 3 | SSE Broadcast | Not started | Real-time push to all clients; late-joiner snapshot; heartbeat |
 | 4 | LLM Integration | Not started | 4 AI players, archetypes, guided decisions, streaming reasoning |
 | 5 | Frontend Wiring | Not started | Replace MOCK_STATE with live SSE; auto-reconnect; CORS |
@@ -60,8 +60,14 @@ None — initialization complete.
 - Side pots / all-in handling
 - Game history and replay (PostgreSQL)
 
+### Quick Tasks Completed
+
+| # | Description | Date | Directory |
+|---|-------------|------|-----------|
+| 260503-01 | Centralized AI model config (models.config.json) | 2026-05-03 | [260503-01-centralized-model-config](./quick/260503-01-centralized-model-config/) |
+
 ## Session Continuity
 
-**Last action:** Phase 1 all 3 plans executed — FastAPI scaffold, poker math engine, LiteLLM wiring — 2026-05-02
-**Next action:** Phase 1 verification, then `/gsd-plan-phase 2`
-**Resumption note:** Plans 01-02 (poker math, 21 tests pass) and 01-03 (.env.example + LiteLLM skip test) merged. Full test suite: 21 passed, 1 skipped. .gitignore fix: added !backend/.env.example negation to override .env* glob.
+**Last action:** Phase 2 Wave 1 complete — cards.py, asyncio_mode, models.py — 73 tests pass — 2026-05-03
+**Next action:** Wave 2: execute 02-03 game.py (single-hand engine)
+**Resumption note:** Wave 1 done. Wave 2: 02-03 game.py (depends on 02-01, 02-02). Wave 3: 02-04 session.py. Wave 4: 02-05 tests.

@@ -2,7 +2,7 @@
 
 ## Phases
 
-- [ ] **Phase 1: Backend Foundation** - FastAPI project, Python environment, poker math engine, LiteLLM wiring
+- [x] **Phase 1: Backend Foundation** - FastAPI project, Python environment, poker math engine, LiteLLM wiring
 - [ ] **Phase 2: Game State Machine** - Full Texas Hold'em flow runnable to console with mock decisions
 - [ ] **Phase 3: SSE Broadcast** - Real-time game state pushed to all viewers; late-joiner snapshot; heartbeat
 - [ ] **Phase 4: LLM Integration** - 4 AI players with archetypes, guided decisions, streaming reasoning, fallbacks
@@ -40,6 +40,14 @@ Hand evaluation must use a battle-tested library (e.g., `treys` or equivalent) r
 **Goal**: A complete Texas Hold'em game runs from pre-flop through showdown in code, with correct blinds, action order, chip tracking, and a winner — no UI, no LLMs, no network.
 **Depends on**: Phase 1 (hand evaluator, chip math)
 **Requirements**: POKER-01, POKER-02, POKER-05
+**Plans:** 5 plans
+
+Plans:
+- [x] 02-01-PLAN.md — pyproject.toml asyncio_mode patch + cards.py treys conversion boundary
+- [x] 02-02-PLAN.md — models.py Pydantic GameState, Player, Card, Action + BettingRoundState + DecisionFn
+- [ ] 02-03-PLAN.md — game.py single-hand engine: deal, betting rounds, showdown, mock_decision
+- [ ] 02-04-PLAN.md — session.py multi-hand session with dealer rotation and stack carry-over
+- [ ] 02-05-PLAN.md — test_game_engine.py covering all 5 success criteria
 
 **Success Criteria** (what must be TRUE):
 1. Running the game engine produces a complete hand: small blind posted, big blind posted, 2 hole cards dealt to each of 4 players, flop (3) → turn (1) → river (1) community cards dealt in correct order
@@ -131,7 +139,7 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 3/3 | Complete | 2026-05-02 |
-| 2. Game State Machine | 0/? | Not started | - |
+| 2. Game State Machine | 0/5 | Not started | - |
 | 3. SSE Broadcast | 0/? | Not started | - |
 | 4. LLM Integration | 0/? | Not started | - |
 | 5. Frontend Wiring | 0/? | Not started | - |
