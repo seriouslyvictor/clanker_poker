@@ -45,7 +45,7 @@ Hand evaluation must use a battle-tested library (e.g., `treys` or equivalent) r
 Plans:
 - [x] 02-01-PLAN.md — pyproject.toml asyncio_mode patch + cards.py treys conversion boundary
 - [x] 02-02-PLAN.md — models.py Pydantic GameState, Player, Card, Action + BettingRoundState + DecisionFn
-- [ ] 02-03-PLAN.md — game.py single-hand engine: deal, betting rounds, showdown, mock_decision
+- [x] 02-03-PLAN.md — game.py single-hand engine: deal, betting rounds, showdown, mock_decision
 - [ ] 02-04-PLAN.md — session.py multi-hand session with dealer rotation and stack carry-over
 - [ ] 02-05-PLAN.md — test_game_engine.py covering all 5 success criteria
 

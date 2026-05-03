@@ -1,7 +1,7 @@
 # Project State
 
 ## Current Phase
-Phase 2 — Game State Machine (executing — Wave 1 complete, 3 plans remaining)
+Phase 2 — Game State Machine (executing — Wave 2 complete, 2 plans remaining)
 
 ## Project Reference
 See: .planning/PROJECT.md
@@ -68,6 +68,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 2 Wave 1 complete — cards.py, asyncio_mode, models.py — 73 tests pass — 2026-05-03
-**Next action:** Wave 2: execute 02-03 game.py (single-hand engine)
-**Resumption note:** Wave 1 done. Wave 2: 02-03 game.py (depends on 02-01, 02-02). Wave 3: 02-04 session.py. Wave 4: 02-05 tests.
+**Last action:** Phase 2 Wave 2 complete — game.py single-hand engine — 100 tests pass — 2026-05-03
+**Next action:** Wave 3: execute 02-04 session.py (multi-hand session with dealer rotation)
+**Resumption note:** Waves 1-2 done. Wave 3: 02-04 session.py (depends on 02-03). Wave 4: 02-05 tests.
