@@ -1,19 +1,19 @@
 # Project State
 
 ## Current Phase
-Phase 1 — Backend Foundation (executing — plan 01 complete)
+Phase 1 — Backend Foundation (all 3 plans complete — pending verification)
 
 ## Project Reference
 See: .planning/PROJECT.md
 
 **Core value:** Spectators watch compelling, human-feeling AI poker with transparent reasoning — system never runs without viewers.
-**Current focus:** Phase 1 executing — 1/3 plans complete
+**Current focus:** Phase 1 verification
 
 ## Phase Status
 
 | # | Phase | Status | Notes |
 |---|-------|--------|-------|
-| 1 | Backend Foundation | In progress (1/3 plans done) | FastAPI scaffold done; poker math engine next |
+| 1 | Backend Foundation | All plans complete (3/3) — verifying | FastAPI scaffold, poker math engine, LiteLLM wiring all done |
 | 2 | Game State Machine | Not started | Full Hold'em flow runnable to console; no LLMs; mock decisions |
 | 3 | SSE Broadcast | Not started | Real-time push to all clients; late-joiner snapshot; heartbeat |
 | 4 | LLM Integration | Not started | 4 AI players, archetypes, guided decisions, streaming reasoning |
@@ -62,6 +62,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 1 Plan 01 executed — FastAPI scaffold with CORS, health endpoint, pydantic-settings config — 2026-05-03
-**Next action:** Execute Plan 02 (poker math engine: treys + Monte Carlo equity + tests)
-**Resumption note:** Plan 01 complete (commits a993ccc, 63f5415). backend/ has pyproject.toml, uv.lock, app/{config,main,api/health}.py. GET /health returns 200. Python 3.13.13 used without pin — treys compatible.
+**Last action:** Phase 1 all 3 plans executed — FastAPI scaffold, poker math engine, LiteLLM wiring — 2026-05-02
+**Next action:** Phase 1 verification, then `/gsd-plan-phase 2`
+**Resumption note:** Plans 01-02 (poker math, 21 tests pass) and 01-03 (.env.example + LiteLLM skip test) merged. Full test suite: 21 passed, 1 skipped. .gitignore fix: added !backend/.env.example negation to override .env* glob.
