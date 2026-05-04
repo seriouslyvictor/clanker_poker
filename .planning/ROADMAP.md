@@ -47,7 +47,7 @@ Plans:
 - [x] 02-02-PLAN.md — models.py Pydantic GameState, Player, Card, Action + BettingRoundState + DecisionFn
 - [x] 02-03-PLAN.md — game.py single-hand engine: deal, betting rounds, showdown, mock_decision
 - [x] 02-04-PLAN.md — session.py multi-hand session with dealer rotation and stack carry-over
-- [ ] 02-05-PLAN.md — test_game_engine.py covering all 5 success criteria
+- [x] 02-05-PLAN.md — test_game_engine.py covering all 5 success criteria
 
 **Success Criteria** (what must be TRUE):
 1. Running the game engine produces a complete hand: small blind posted, big blind posted, 2 hole cards dealt to each of 4 players, flop (3) → turn (1) → river (1) community cards dealt in correct order
