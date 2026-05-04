@@ -630,22 +630,19 @@ CORS_ORIGINS=["http://localhost:3000"]
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Python version to pin**
+1. **Python version to pin** — RESOLVED
    - What we know: System has 3.14; treys is pure Python but untested on 3.14
-   - What's unclear: Whether treys 0.1.8 was ever explicitly tested on 3.13/3.14
-   - Recommendation: Start with system Python 3.14; if `uv run pytest` shows any treys import errors, add `uv python pin 3.12` to `backend/.python-version`
+   - Resolution: Plan 01-01 Task 1 handles this with a conditional step: start with system Python 3.14; if `uv run pytest` shows any treys import errors, run `uv python pin 3.12` inside `backend/`. `pyproject.toml` uses `requires-python = ">=3.11"`.
 
-2. **Ollama model availability**
+2. **Ollama model availability** — RESOLVED
    - What we know: Ollama is not installed on this machine
-   - What's unclear: Which model (`llama3`, `llama3.1`, `llama3.2`) is expected to be available
-   - Recommendation: Test uses `ollama_chat/llama3` and skips if server unreachable — planner should document that Ollama must be manually installed and a model pulled separately
+   - Resolution: `test_litellm_providers.py` uses `ollama_chat/llama3` and skips via HTTP probe (`httpx.get` to `/api/tags`) when Ollama is unreachable. `uv run pytest` passes without Ollama installed.
 
-3. **`evaluator.evaluate()` argument order convention**
+3. **`evaluator.evaluate()` argument order convention** — RESOLVED
    - What we know: Source is `(hand, board)` but README shows `(board, hand)` — both work identically
-   - What's unclear: Which convention the team prefers in wrapper code
-   - Recommendation: Follow README convention in `poker_math.py` comments; add a docstring noting the equivalence
+   - Resolution: `poker_math.py` follows README convention (board first in comments) and includes a docstring noting the equivalence. Plan 01-02 specifies this explicitly in the implementation action.
 
 ---
 
