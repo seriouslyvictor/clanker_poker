@@ -1,7 +1,7 @@
 # Project State
 
 ## Current Phase
-Phase 2 — Game State Machine (all 5 plans complete — verifying)
+Phase 3 — SSE Broadcast (not started)
 
 ## Project Reference
 See: .planning/PROJECT.md
@@ -14,7 +14,7 @@ See: .planning/PROJECT.md
 | # | Phase | Status | Notes |
 |---|-------|--------|-------|
 | 1 | Backend Foundation | Complete ✓ | FastAPI scaffold, poker math engine, LiteLLM wiring — human UAT passed 2026-05-03 |
-| 2 | Game State Machine | In progress ◆ | Wave 1 complete (02-01, 02-02) — game.py, session.py, tests remain |
+| 2 | Game State Machine | Complete ✓ | cards.py, models.py, game.py, session.py, tests — 5/5 SC verified 2026-05-03 |
 | 3 | SSE Broadcast | Not started | Real-time push to all clients; late-joiner snapshot; heartbeat |
 | 4 | LLM Integration | Not started | 4 AI players, archetypes, guided decisions, streaming reasoning |
 | 5 | Frontend Wiring | Not started | Replace MOCK_STATE with live SSE; auto-reconnect; CORS |
@@ -68,6 +68,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 2 Wave 3 complete — session.py 10-hand session with dealer rotation — 128 tests pass — 2026-05-03
-**Next action:** Wave 4: execute 02-05 test_game_engine.py (all 5 ROADMAP success criteria)
-**Resumption note:** Waves 1-3 done. Wave 4: 02-05 test_game_engine.py (final test suite covering SC1-SC5).
+**Last action:** Phase 2 complete — 5/5 SC verified — 136 tests pass — 2026-05-03
+**Next action:** `/gsd-discuss-phase 3` or `/gsd-plan-phase 3` (SSE Broadcast)
+**Resumption note:** Phase 2 done. Phase 3: SSE broadcast — FastAPI → Redis Pub/Sub → SSE → Next.js. 4 SC: 3-browser sync, late-joiner snapshot, heartbeat + header, monotonic IDs.

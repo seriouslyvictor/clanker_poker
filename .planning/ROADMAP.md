@@ -3,7 +3,7 @@
 ## Phases
 
 - [x] **Phase 1: Backend Foundation** - FastAPI project, Python environment, poker math engine, LiteLLM wiring
-- [ ] **Phase 2: Game State Machine** - Full Texas Hold'em flow runnable to console with mock decisions
+- [x] **Phase 2: Game State Machine** - Full Texas Hold'em flow runnable to console with mock decisions
 - [ ] **Phase 3: SSE Broadcast** - Real-time game state pushed to all viewers; late-joiner snapshot; heartbeat
 - [ ] **Phase 4: LLM Integration** - 4 AI players with archetypes, guided decisions, streaming reasoning, fallbacks
 - [ ] **Phase 5: Frontend Wiring** - Replace MOCK_STATE with live SSE feed; auto-reconnect; CORS
