@@ -68,6 +68,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 2 complete — 5/5 SC verified — 136 tests pass — 2026-05-03
-**Next action:** `/gsd-discuss-phase 3` or `/gsd-plan-phase 3` (SSE Broadcast)
-**Resumption note:** Phase 2 done. Phase 3: SSE broadcast — FastAPI → Redis Pub/Sub → SSE → Next.js. 4 SC: 3-browser sync, late-joiner snapshot, heartbeat + header, monotonic IDs.
+**Last action:** Phase 3 context gathered — 2026-05-05
+**Next action:** `/gsd-plan-phase 3` (SSE Broadcast)
+**Resumption note:** Phase 3 context complete. Key decisions: Redis (redis.asyncio) + docker-compose for local dev; full GameState on phase transitions; `event: game_state` + `: ping` heartbeat; sse-starlette fan-out; auto-loop background task with HAND_DELAY_SECONDS; `GET /api/stream`. See .planning/phases/03-sse-broadcast/03-CONTEXT.md.
