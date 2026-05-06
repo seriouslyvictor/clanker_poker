@@ -65,6 +65,14 @@ No LLMs, no SSE, no HTTP in this phase — pure game logic. The mock decision fu
 **Goal**: All connected browser clients see the same game state in real time, pushed from the FastAPI server; late joiners get a full snapshot immediately; connections survive proxy buffering and network blips.
 **Depends on**: Phase 2 (game state to broadcast)
 **Requirements**: STREAM-01, STREAM-02, STREAM-03
+**Plans:** 5 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Infrastructure: docker-compose.yml (Redis), config.py extensions, .env.example, redis-py install
+- [ ] 03-02-PLAN.md — Engine callback: broadcast_fn parameter on run_hand() + session.py wire-through
+- [ ] 03-03-PLAN.md — Broadcast layer: broadcast/broker.py (EventBroker), broadcast/publisher.py, game_loop.py
+- [ ] 03-04-PLAN.md — SSE endpoint + lifespan: api/stream.py (GET /api/stream), expanded main.py
+- [ ] 03-05-PLAN.md — Tests + human UAT: test_sse.py (5 tests) + 3-browser verification checkpoint
 
 **Success Criteria** (what must be TRUE):
 1. Three browsers opened to the SSE endpoint simultaneously all show identical game state events within 100ms of each state change — no viewer sees a different game
@@ -139,8 +147,8 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 3/3 | Complete | 2026-05-02 |
-| 2. Game State Machine | 0/5 | Not started | - |
-| 3. SSE Broadcast | 0/? | Not started | - |
+| 2. Game State Machine | 5/5 | Complete | 2026-05-03 |
+| 3. SSE Broadcast | 0/5 | Not started | - |
 | 4. LLM Integration | 0/? | Not started | - |
 | 5. Frontend Wiring | 0/? | Not started | - |
 | 6. Viewer Experience | 0/? | Not started | - |
