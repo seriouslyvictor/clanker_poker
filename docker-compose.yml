@@ -1,0 +1,13 @@
+# Start Docker Desktop first, then: docker compose up -d redis
+# FastAPI runs outside Docker: cd backend && uv run uvicorn backend.app.main:app --reload
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5

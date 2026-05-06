@@ -9,6 +9,7 @@ dependencies = [
     "litellm>=1.83.0",
     "pydantic-settings>=2.14.0",
     "python-dotenv>=1.2.0",
+    "redis>=7.4.0",
 ]
 
 [build-system]
