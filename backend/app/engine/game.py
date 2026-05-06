@@ -19,7 +19,7 @@ decision function is called for that seat. This prevents the infinite-loop / ear
 termination bugs documented in RESEARCH.md Pitfall 1.
 """
 import copy
-from typing import Optional
+from typing import Awaitable, Callable, Optional
 
 from treys import Deck
 
@@ -28,6 +28,13 @@ from app.engine.models import (
     Card, Action, ActionType, Player, GameState, BettingRoundState, DecisionFn
 )
 from app.engine.poker_math import evaluate_hand
+
+
+# ---------------------------------------------------------------------------
+# Type definitions
+# ---------------------------------------------------------------------------
+
+BroadcastFn = Callable[["GameState"], Awaitable[None]]
 
 
 # ---------------------------------------------------------------------------
@@ -254,6 +261,16 @@ async def run_betting_round(
 
 
 # ---------------------------------------------------------------------------
+# Private: broadcast helper
+# ---------------------------------------------------------------------------
+
+async def _maybe_broadcast(state: GameState, fn: Optional[BroadcastFn]) -> None:
+    """Call broadcast_fn if provided. No-op when fn is None (Phase 2 tests unaffected)."""
+    if fn is not None:
+        await fn(state)
+
+
+# ---------------------------------------------------------------------------
 # Main hand engine
 # ---------------------------------------------------------------------------
 
@@ -262,6 +279,7 @@ async def run_hand(
     dealer_seat: int,
     big_blind: int,
     decision_fn: DecisionFn,
+    broadcast_fn: Optional[BroadcastFn] = None,
 ) -> GameState:
     """
     Run a single complete Texas Hold'em hand.
@@ -271,6 +289,8 @@ async def run_hand(
         dealer_seat:  index of the dealer button
         big_blind:    big blind amount in chips
         decision_fn:  async callable matching DecisionFn signature
+        broadcast_fn: Optional async callable receiving GameState at each phase transition.
+                      Defaults to None — safe for Phase 2 tests. Phase 3 passes publish().
 
     Returns:
         Final GameState with phase='showdown' (or earlier if all-but-one fold).
@@ -331,6 +351,9 @@ async def run_hand(
         show_cards=False,
     )
 
+    # Broadcast pre-flop state
+    await _maybe_broadcast(game_state, broadcast_fn)
+
     # -------------------------------------------------------------------------
     # Pre-flop betting round
     # -------------------------------------------------------------------------
@@ -341,7 +364,9 @@ async def run_hand(
 
     # Early termination check
     if _active_count(players) == 1:
-        return _award_to_last_standing(game_state, players)
+        final = _award_to_last_standing(game_state, players)
+        await _maybe_broadcast(final, broadcast_fn)
+        return final
 
     # -------------------------------------------------------------------------
     # Flop: deal 3 community cards
@@ -352,13 +377,18 @@ async def run_hand(
     game_state.phase = "flop"
     game_state.players = players
 
+    # Broadcast flop state
+    await _maybe_broadcast(game_state, broadcast_fn)
+
     game_state, players = await run_betting_round(
         game_state, players, dealer_seat, is_preflop=False,
         big_blind=big_blind, decision_fn=decision_fn
     )
 
     if _active_count(players) == 1:
-        return _award_to_last_standing(game_state, players)
+        final = _award_to_last_standing(game_state, players)
+        await _maybe_broadcast(final, broadcast_fn)
+        return final
 
     # -------------------------------------------------------------------------
     # Turn: deal 1 community card
@@ -369,13 +399,18 @@ async def run_hand(
     game_state.phase = "turn"
     game_state.players = players
 
+    # Broadcast turn state
+    await _maybe_broadcast(game_state, broadcast_fn)
+
     game_state, players = await run_betting_round(
         game_state, players, dealer_seat, is_preflop=False,
         big_blind=big_blind, decision_fn=decision_fn
     )
 
     if _active_count(players) == 1:
-        return _award_to_last_standing(game_state, players)
+        final = _award_to_last_standing(game_state, players)
+        await _maybe_broadcast(final, broadcast_fn)
+        return final
 
     # -------------------------------------------------------------------------
     # River: deal 1 community card
@@ -386,13 +421,18 @@ async def run_hand(
     game_state.phase = "river"
     game_state.players = players
 
+    # Broadcast river state
+    await _maybe_broadcast(game_state, broadcast_fn)
+
     game_state, players = await run_betting_round(
         game_state, players, dealer_seat, is_preflop=False,
         big_blind=big_blind, decision_fn=decision_fn
     )
 
     if _active_count(players) == 1:
-        return _award_to_last_standing(game_state, players)
+        final = _award_to_last_standing(game_state, players)
+        await _maybe_broadcast(final, broadcast_fn)
+        return final
 
     # -------------------------------------------------------------------------
     # Showdown: evaluate hands, award pot (Pitfall 3: only called with 5 community cards)
@@ -426,6 +466,9 @@ async def run_hand(
     game_state.winner = winner_idx
     game_state.winner_hand = winner_result.get("hand_name") or ""
     game_state.players = players
+
+    # Broadcast showdown state
+    await _maybe_broadcast(game_state, broadcast_fn)
 
     return game_state
 
