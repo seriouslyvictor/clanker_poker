@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Optional
 
-from app.engine.game import run_hand, mock_decision
+from app.engine.game import run_hand, mock_decision, BroadcastFn
 from app.engine.models import Player, GameState, DecisionFn
 
 
@@ -64,6 +64,7 @@ class GameSession:
         self,
         n_hands: int = 10,
         decision_fn: Optional[DecisionFn] = None,
+        broadcast_fn: Optional[BroadcastFn] = None,
     ) -> list[GameState]:
         """
         Run n_hands of Texas Hold'em. Returns list of final GameState per hand.
@@ -72,6 +73,8 @@ class GameSession:
             n_hands: Number of hands to play
             decision_fn: Async decision function. Defaults to mock_decision (always call/check).
                          Phase 4 passes the LLM decision function here.
+            broadcast_fn: Optional async callable receiving GameState at each phase transition.
+                          Defaults to None (Phase 2 tests unaffected). Phase 3 passes publish().
 
         Returns:
             list[GameState] — final state of each completed hand, in order
@@ -94,6 +97,7 @@ class GameSession:
                 dealer_seat=self.dealer_seat,
                 big_blind=self.big_blind,
                 decision_fn=decision_fn,
+                broadcast_fn=broadcast_fn,
             )
 
             # Update persistent player chip counts from the completed hand
