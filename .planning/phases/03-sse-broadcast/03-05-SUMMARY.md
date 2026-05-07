@@ -8,8 +8,8 @@ tags:
   - testing
   - broker
   - automated
-status: completed-task-1
-decision_status: awaiting_human_verification
+status: completed
+decision_status: human_verified
 dependency_graph:
   requires:
     - 03-04-PLAN.md (SSE endpoint + broker built)
@@ -94,9 +94,10 @@ cd backend && uv run pytest tests/ -v
 ✅ All Phase 3 tests passing
 ✅ No asyncio_mode warnings
 
-## Task 2: Human Verification Checkpoint (PENDING)
+## Task 2: Human Verification Checkpoint (APPROVED ✓)
 
 **Type:** `checkpoint:human-verify` (blocking)
+**Result:** Approved 2026-05-06 — tested in Chromium and Firefox; identical events, same loop, same IDs across both browsers.
 
 ### What Was Built
 Full SSE broadcast pipeline from Phase 3:
