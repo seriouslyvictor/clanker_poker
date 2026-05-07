@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Phase
-Phase 3 — SSE Broadcast (not started)
+Phase 4 — LLM Integration (not started)
 
 ## Project Reference
 See: .planning/PROJECT.md
 
 **Core value:** Spectators watch compelling, human-feeling AI poker with transparent reasoning — system never runs without viewers.
-**Current focus:** Phase 2 — Game State Machine
+**Current focus:** Phase 3 — SSE Broadcast
 
 ## Phase Status
 
@@ -15,7 +15,7 @@ See: .planning/PROJECT.md
 |---|-------|--------|-------|
 | 1 | Backend Foundation | Complete ✓ | FastAPI scaffold, poker math engine, LiteLLM wiring — human UAT passed 2026-05-03 |
 | 2 | Game State Machine | Complete ✓ | cards.py, models.py, game.py, session.py, tests — 5/5 SC verified 2026-05-03 |
-| 3 | SSE Broadcast | Not started | Real-time push to all clients; late-joiner snapshot; heartbeat |
+| 3 | SSE Broadcast | Complete ✓ | EventBroker, publisher, SSE endpoint, 6 tests — SC-1–4 human verified 2026-05-06 |
 | 4 | LLM Integration | Not started | 4 AI players, archetypes, guided decisions, streaming reasoning |
 | 5 | Frontend Wiring | Not started | Replace MOCK_STATE with live SSE; auto-reconnect; CORS |
 | 6 | Viewer Experience | Not started | Idle screen, Start button, anonymous winner predictions |
@@ -68,6 +68,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 3 context gathered — 2026-05-05
-**Next action:** `/gsd-plan-phase 3` (SSE Broadcast)
-**Resumption note:** Phase 3 context complete. Key decisions: Redis (redis.asyncio) + docker-compose for local dev; full GameState on phase transitions; `event: game_state` + `: ping` heartbeat; sse-starlette fan-out; auto-loop background task with HAND_DELAY_SECONDS; `GET /api/stream`. See .planning/phases/03-sse-broadcast/03-CONTEXT.md.
+**Last action:** Phase 3 complete — 2026-05-06 (5/5 plans, 14 commits, 142 tests passing, SC-1–4 human verified in Chromium + Firefox)
+**Next action:** `/gsd-discuss-phase 4` or `/gsd-plan-phase 4` (LLM Integration)
+**Resumption note:** Phase 4 context (03-CONTEXT.md) may give a head start — check if 04-CONTEXT.md exists before planning. SSE pipeline is live: docker compose up -d redis + uvicorn to restart the stack.

@@ -4,7 +4,7 @@
 
 - [x] **Phase 1: Backend Foundation** - FastAPI project, Python environment, poker math engine, LiteLLM wiring
 - [x] **Phase 2: Game State Machine** - Full Texas Hold'em flow runnable to console with mock decisions
-- [ ] **Phase 3: SSE Broadcast** - Real-time game state pushed to all viewers; late-joiner snapshot; heartbeat
+- [x] **Phase 3: SSE Broadcast** - Real-time game state pushed to all viewers; late-joiner snapshot; heartbeat
 - [ ] **Phase 4: LLM Integration** - 4 AI players with archetypes, guided decisions, streaming reasoning, fallbacks
 - [ ] **Phase 5: Frontend Wiring** - Replace MOCK_STATE with live SSE feed; auto-reconnect; CORS
 - [ ] **Phase 6: Viewer Experience** - Idle screen, Start button, anonymous winner predictions
@@ -68,11 +68,11 @@ No LLMs, no SSE, no HTTP in this phase — pure game logic. The mock decision fu
 **Plans:** 5 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — Infrastructure: docker-compose.yml (Redis), config.py extensions, .env.example, redis-py install
-- [ ] 03-02-PLAN.md — Engine callback: broadcast_fn parameter on run_hand() + session.py wire-through
-- [ ] 03-03-PLAN.md — Broadcast layer: broadcast/broker.py (EventBroker), broadcast/publisher.py, game_loop.py
-- [ ] 03-04-PLAN.md — SSE endpoint + lifespan: api/stream.py (GET /api/stream), expanded main.py
-- [ ] 03-05-PLAN.md — Tests + human UAT: test_sse.py (5 tests) + 3-browser verification checkpoint
+- [x] 03-01-PLAN.md — Infrastructure: docker-compose.yml (Redis), config.py extensions, .env.example, redis-py install
+- [x] 03-02-PLAN.md — Engine callback: broadcast_fn parameter on run_hand() + session.py wire-through
+- [x] 03-03-PLAN.md — Broadcast layer: broadcast/broker.py (EventBroker), broadcast/publisher.py, game_loop.py
+- [x] 03-04-PLAN.md — SSE endpoint + lifespan: api/stream.py (GET /api/stream), expanded main.py
+- [x] 03-05-PLAN.md — Tests + human UAT: test_sse.py (6 tests) + 3-browser verification checkpoint
 
 **Success Criteria** (what must be TRUE):
 1. Three browsers opened to the SSE endpoint simultaneously all show identical game state events within 100ms of each state change — no viewer sees a different game
