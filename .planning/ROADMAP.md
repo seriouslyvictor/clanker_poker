@@ -91,6 +91,14 @@ This phase wires the Phase 2 game engine's state transitions into the SSE broadc
 **Goal**: All 4 AI players make real decisions driven by archetype bias and math context, stream their reasoning token-by-token, and never halt the game on timeout or bad output.
 **Depends on**: Phase 2 (decision seam), Phase 3 (SSE pipeline for streaming reasoning)
 **Requirements**: AI-01, AI-02, AI-03, AI-04, AI-05, AI-06, INFRA-05
+**Plans:** 5 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — ai/ package foundation: archetypes, budget/circuit-breaker, Pydantic models + engine/models.py current_bet patch
+- [ ] 04-02-PLAN.md — SSE envelope extension: publish_reasoning(), dual-channel broker, stream.py reasoning routing
+- [ ] 04-03-PLAN.md — Core LLM decision module: prompt.py (build_system/user_prompt) + decision.py (make_llm_decision_fn, fallback, streaming)
+- [ ] 04-04-PLAN.md — Game engine wiring: session.py config-driven players, game.py per-action broadcast + current_bet sync, game_loop.py LLM integration
+- [ ] 04-05-PLAN.md — Tests + human UAT: test_llm_decisions.py + test_ai_prompt.py + live game verification
 
 **Success Criteria** (what must be TRUE):
 1. Each of the 4 LLM players (GPT-4o, Gemini, Claude, Llama 3) is called at every decision point and returns a structured action (fold / call / raise with amount) plus reasoning text — verified by watching a live game log
@@ -148,7 +156,7 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation | 3/3 | Complete | 2026-05-02 |
 | 2. Game State Machine | 5/5 | Complete | 2026-05-03 |
-| 3. SSE Broadcast | 0/5 | Not started | - |
-| 4. LLM Integration | 0/? | Not started | - |
+| 3. SSE Broadcast | 5/5 | Complete | 2026-05-06 |
+| 4. LLM Integration | 0/5 | Not started | - |
 | 5. Frontend Wiring | 0/? | Not started | - |
 | 6. Viewer Experience | 0/? | Not started | - |
