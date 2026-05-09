@@ -249,7 +249,13 @@ class TestMakeLlmDecisionFn:
         # Pre-configure model string same as _get_model would return
         import json
         from pathlib import Path
-        config_path = Path(__file__).parent.parent.parent / "models.config.json"
+        # models.config.json lives in the project root (one above the worktree root / backend parent)
+        # Try worktree root first, then project root (for local dev vs CI)
+        worktree_root = Path(__file__).parent.parent.parent
+        project_root = worktree_root.parent.parent.parent  # worktree is inside .claude/worktrees/
+        config_path = worktree_root / "models.config.json"
+        if not config_path.exists():
+            config_path = project_root / "models.config.json"
         with open(config_path) as f:
             configs = json.load(f)
         model_str = next(c["litellmModel"] for c in configs if c["id"] == "gpt4")
