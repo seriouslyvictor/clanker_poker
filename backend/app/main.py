@@ -47,10 +47,10 @@ async def lifespan(app: FastAPI):
     # 3. Fan-out broker
     app.state.broker = EventBroker()
 
-    # 4. Background: Redis subscriber → fan-out to client queues
+    # 4. Background: Redis subscriber → fan-out to client queues (both game:state + game:reasoning)
     app.state.subscriber_task = asyncio.create_task(
         app.state.broker.run_subscriber(
-            app.state.redis_client, channel="game:state"
+            app.state.redis_client
         )
     )
 
