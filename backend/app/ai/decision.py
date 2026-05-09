@@ -98,16 +98,25 @@ def make_llm_decision_fn(
     redis_client,
     budget: BudgetTracker,
     circuit: CircuitBreaker,
+    player_models: dict[str, str] | None = None,  # player_id -> litellm model string (Plan 04)
 ):
     """
     Factory returning a DecisionFn closure for LLM-driven decisions (D-14).
 
-    The closure captures archetypes, redis_client, budget, and circuit.
+    The closure captures archetypes, redis_client, budget, circuit, and player_models.
     The returned function signature matches DecisionFn exactly:
         async def _(player: Player, game_state: GameState) -> Action
 
+    Args:
+        player_models: Optional dict mapping player_id -> LiteLLM model string.
+                       When provided (Plan 04+), used directly for model routing.
+                       Falls back to _get_model() for backward compat (tests without dict).
+
     Usage in game_loop.py:
-        decision_fn = make_llm_decision_fn(archetypes, redis_client, budget, circuit)
+        decision_fn = make_llm_decision_fn(
+            archetypes, redis_client, budget, circuit,
+            player_models=session.player_models,
+        )
         await session.run(n_hands=10, decision_fn=decision_fn, broadcast_fn=...)
     """
     async def llm_decision_fn(player: Player, game_state: GameState) -> Action:
@@ -132,7 +141,8 @@ def make_llm_decision_fn(
         )
 
         # Circuit breaker: skip LLM if provider has tripped (D-16)
-        litellm_model = _get_model(player)
+        # player_models dict (Plan 04) takes priority; fall back to _get_model() for tests
+        litellm_model = (player_models or {}).get(player.id) or _get_model(player)
         if circuit.is_open(litellm_model):
             logger.info("[%s] Circuit open — using fallback immediately", player.name)
             fallback_action = await _fallback_action(

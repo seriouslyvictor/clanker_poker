@@ -151,6 +151,7 @@ async def run_betting_round(
     is_preflop: bool,
     big_blind: int,
     decision_fn: DecisionFn,
+    broadcast_fn: Optional[BroadcastFn] = None,
 ) -> tuple[GameState, list[Player]]:
     """
     Run a single betting round (pre-flop, flop, turn, or river).
@@ -161,6 +162,11 @@ async def run_betting_round(
     Action order:
       Pre-flop: UTG = (dealer + 3) % n
       Post-flop: first active seat starting from (dealer + 1) % n
+
+    Phase 4 additions (D-03):
+      - game_state.current_bet synced from betting_state.current_bet so
+        decision.py reconstruct_valid_actions() sees the correct value
+      - broadcast_fn called after each individual player action (D-03)
     """
     n = len(players)
 
@@ -170,6 +176,8 @@ async def run_betting_round(
         last_raise_size=big_blind,
         aggressor_seat=-1,
     )
+    # Sync current_bet to GameState so DecisionFn can reconstruct valid actions (D-03)
+    game_state.current_bet = betting_state.current_bet
     # has_acted starts empty — neither SB nor BB are added during blind posting
 
     # Determine first actor
@@ -238,6 +246,11 @@ async def run_betting_round(
 
         # Update GameState players so decision_fn sees current state
         game_state.players = players
+        # Sync current_bet after raise may have updated it (D-03)
+        game_state.current_bet = betting_state.current_bet
+        # Broadcast after each individual player action within a betting round (D-03)
+        if broadcast_fn is not None:
+            await broadcast_fn(game_state)
 
         # Early termination — only one player left
         if _active_count(players) == 1:
@@ -359,7 +372,7 @@ async def run_hand(
     # -------------------------------------------------------------------------
     game_state, players = await run_betting_round(
         game_state, players, dealer_seat, is_preflop=True,
-        big_blind=big_blind, decision_fn=decision_fn
+        big_blind=big_blind, decision_fn=decision_fn, broadcast_fn=broadcast_fn,
     )
 
     # Early termination check
@@ -382,7 +395,7 @@ async def run_hand(
 
     game_state, players = await run_betting_round(
         game_state, players, dealer_seat, is_preflop=False,
-        big_blind=big_blind, decision_fn=decision_fn
+        big_blind=big_blind, decision_fn=decision_fn, broadcast_fn=broadcast_fn,
     )
 
     if _active_count(players) == 1:
@@ -404,7 +417,7 @@ async def run_hand(
 
     game_state, players = await run_betting_round(
         game_state, players, dealer_seat, is_preflop=False,
-        big_blind=big_blind, decision_fn=decision_fn
+        big_blind=big_blind, decision_fn=decision_fn, broadcast_fn=broadcast_fn,
     )
 
     if _active_count(players) == 1:
@@ -426,7 +439,7 @@ async def run_hand(
 
     game_state, players = await run_betting_round(
         game_state, players, dealer_seat, is_preflop=False,
-        big_blind=big_blind, decision_fn=decision_fn
+        big_blind=big_blind, decision_fn=decision_fn, broadcast_fn=broadcast_fn,
     )
 
     if _active_count(players) == 1:

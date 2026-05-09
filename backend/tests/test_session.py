@@ -13,8 +13,12 @@ Test coverage:
   SC6 - Each hand's final GameState has phase in ('showdown', 'hand_complete') or early-term
   SC7 - run() returns list[GameState] with len == n_hands (or < if early termination)
   SC8 - decision_fn parameter is accepted; defaults to mock_decision
-  SC9 - Players built with correct ids, names, org, color, deck fields
+  SC9 - Players built with config-driven ids, names, org, color, deck fields (Phase 4 D-13)
   SC10 - New GameSession resets chips (not shared across instances)
+
+Phase 4 note (D-13): Players are now loaded from models.config.json instead of mock data.
+  The config-driven player IDs are: gpt4, gemini, deepseek, grok.
+  SC9 tests updated to reflect real config values.
 """
 import asyncio
 
@@ -53,26 +57,52 @@ class TestGameSessionInit:
         assert all(p.chips == 500 for p in session.players)
 
     def test_player_ids(self):
+        """Phase 4 D-13: players loaded from models.config.json, not mock data."""
         session = GameSession(n_players=4)
         ids = [p.id for p in session.players]
-        assert ids == ['player-0', 'player-1', 'player-2', 'player-3']
+        assert ids == ['gpt4', 'gemini', 'deepseek', 'grok']
 
     def test_player_names(self):
+        """Phase 4 D-13: player names match models.config.json."""
         session = GameSession(n_players=4)
         names = [p.name for p in session.players]
-        assert names == ['Player 0', 'Player 1', 'Player 2', 'Player 3']
+        assert names == ['GPT-5.5 Nano', 'Gemini Flash', 'DeepSeek v4', 'Grok']
 
     def test_player_org(self):
+        """Phase 4 D-13: player orgs match models.config.json."""
         session = GameSession(n_players=4)
-        assert all(p.org == 'mock' for p in session.players)
+        orgs = [p.org for p in session.players]
+        assert orgs == ['OpenAI', 'Google', 'DeepSeek', 'xAI']
 
     def test_player_color(self):
+        """Phase 4 D-13: player colors are non-empty strings from config."""
         session = GameSession(n_players=4)
-        assert all(p.color == 'gray' for p in session.players)
+        assert all(p.color for p in session.players)
+        assert session.players[0].color == '#10a37f'  # GPT-5.5 Nano / OpenAI
 
     def test_player_deck(self):
+        """Phase 4 D-13: player decks are non-empty strings from config."""
         session = GameSession(n_players=4)
-        assert all(p.deck == 'default' for p in session.players)
+        assert all(p.deck for p in session.players)
+        assert 'deck-blue' in session.players[0].deck  # GPT-5.5 Nano deck
+
+    def test_player_models_dict(self):
+        """Phase 4 D-13: player_models dict maps player_id -> litellm model string."""
+        session = GameSession(n_players=4)
+        assert hasattr(session, 'player_models')
+        assert len(session.player_models) == 4
+        assert session.player_models['gpt4'] == 'openai/gpt-5-nano'
+        assert session.player_models['gemini'] == 'gemini/gemini-3.1-flash-lite-preview'
+        assert session.player_models['deepseek'] == 'deepseek/deepseek-v4-flash'
+        assert session.player_models['grok'] == 'xai/grok-4'
+
+    def test_n_players_cap_respected(self):
+        """n_players=3 returns first 3 players from config; player_models has 3 entries."""
+        session = GameSession(n_players=3)
+        assert len(session.players) == 3
+        assert len(session.player_models) == 3
+        assert session.players[0].id == 'gpt4'
+        assert 'gpt4' in session.player_models
 
     def test_initial_dealer_seat(self):
         session = GameSession()
