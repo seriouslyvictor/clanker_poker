@@ -79,7 +79,8 @@ class GameState(BaseModel):
     community_cards: list[Card] = Field(default_factory=list)  # → communityCards in JSON
     players: list[Player] = Field(default_factory=list)
     show_cards: bool = False          # → showCards in JSON
-    reasoning: list = Field(default_factory=list)  # ReasoningEntry list — Phase 4 fills
+    current_bet: int = 0             # → currentBet in JSON; highest live bet this street (Phase 4)
+    reasoning: list = Field(default_factory=list)  # list[ReasoningEntry] — Phase 4
     winner: Optional[int] = None     # player index, or None if no winner yet
     winner_hand: str = ""            # → winnerHand in JSON (e.g. 'Full House')
 
