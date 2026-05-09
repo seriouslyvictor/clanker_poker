@@ -2,7 +2,7 @@
 session.py — multi-hand Texas Hold'em session with dealer rotation.
 
 Manages:
-  - Player initialization with starting chip stacks
+  - Player initialization from models.config.json (D-13, Phase 4)
   - Dealer button rotation (clockwise, one seat per hand)
   - Stack carry-over between hands (no reset within a session)
   - Player elimination: players with 0 chips are skipped (not dealt in);
@@ -14,28 +14,75 @@ Usage:
 
 Phase 3: The game loop in session.run() is the seam where SSE broadcast hooks in.
          Each hand's final GameState will be pushed to SSE subscribers.
+Phase 4: _load_players_from_config() replaces _make_players() mock (D-13).
+         player_models dict added to GameSession for LLM routing in game_loop.py.
 """
 from __future__ import annotations
 
+import json
+import pathlib
 from typing import Optional
 
 from app.engine.game import run_hand, mock_decision, BroadcastFn
 from app.engine.models import Player, GameState, DecisionFn
 
 
-def _make_players(n_players: int, starting_chips: int) -> list[Player]:
-    """Create mock player roster for Phase 2. Phase 4 replaces with LLM-backed players."""
-    return [
-        Player(
-            id=f'player-{i}',
-            name=f'Player {i}',
-            org='mock',
-            color='gray',
-            deck='default',
+def _find_models_config() -> pathlib.Path:
+    """
+    Locate models.config.json searching from the session.py location upward.
+
+    Search order:
+      1. Worktree root (parent.parent.parent.parent of this file)
+      2. Project root three levels above worktree root (for worktrees inside
+         .claude/worktrees/ — i.e., worktree_root.parent.parent.parent)
+
+    This two-step resolution works in:
+      - Local dev (project root)
+      - Git worktree (worktree root or project root above .claude/)
+    """
+    this_file = pathlib.Path(__file__).resolve()
+    worktree_root = this_file.parent.parent.parent.parent  # engine/ -> app/ -> backend/ -> worktree root
+
+    candidate = worktree_root / "models.config.json"
+    if candidate.exists():
+        return candidate
+
+    # Worktree is inside .claude/worktrees/<name>/ — project root is 3 levels up
+    project_root = worktree_root.parent.parent.parent
+    candidate = project_root / "models.config.json"
+    if candidate.exists():
+        return candidate
+
+    raise FileNotFoundError(
+        f"models.config.json not found at {worktree_root} or {project_root}. "
+        "Ensure the file exists in the project root."
+    )
+
+
+def _load_players_from_config(starting_chips: int) -> tuple[list[Player], dict[str, str]]:
+    """
+    Load player roster from models.config.json (D-13).
+
+    Returns:
+        players:       list[Player] using id/name/org/color/deck from config
+        player_models: dict[str, str] mapping player_id -> litellmModel string
+                       Stored on GameSession separately — Player model has no litellm_model field.
+    """
+    config_path = _find_models_config()
+    configs = json.loads(config_path.read_text())
+    players = []
+    player_models: dict[str, str] = {}
+    for cfg in configs:
+        players.append(Player(
+            id=cfg["id"],
+            name=cfg["name"],
+            org=cfg["org"],
+            color=cfg["color"],
+            deck=cfg["deck"],
             chips=starting_chips,
-        )
-        for i in range(n_players)
-    ]
+        ))
+        player_models[cfg["id"]] = cfg["litellmModel"]
+    return players, player_models
 
 
 class GameSession:
@@ -43,9 +90,10 @@ class GameSession:
     Manages a sequence of Texas Hold'em hands with dealer rotation and stack carry-over.
 
     Attributes:
-        n_players: Number of players (default 4)
+        n_players:     Number of players (default 4)
         starting_chips: Initial chip stack per player (reset on new GameSession only)
-        big_blind: Big blind amount; small blind = big_blind // 2
+        big_blind:     Big blind amount; small blind = big_blind // 2
+        player_models: dict mapping player_id -> LiteLLM model string (Phase 4, D-14)
     """
 
     def __init__(
@@ -57,7 +105,13 @@ class GameSession:
         self.n_players = n_players
         self.starting_chips = starting_chips
         self.big_blind = big_blind
-        self.players: list[Player] = _make_players(n_players, starting_chips)
+        players, player_models = _load_players_from_config(starting_chips)
+        # Respect n_players cap: slice to the requested count
+        self.players: list[Player] = players[:n_players]
+        self.player_models: dict[str, str] = {
+            pid: model for pid, model in player_models.items()
+            if pid in {p.id for p in self.players}
+        }
         self.dealer_seat: int = 0
 
     async def run(
