@@ -8,9 +8,12 @@ Each connected SSE client has its own Queue (maxsize=10). Slow clients drop even
 D-09: per-client asyncio.Queue is the local broker; Redis pub/sub is the cross-process bus.
 """
 import asyncio
+import json
 import logging
 
 import redis.asyncio as redis
+
+_REASONING_CHANNEL = "game:reasoning"  # same value as publisher.REASONING_CHANNEL
 
 logger = logging.getLogger(__name__)
 
@@ -66,31 +69,46 @@ class EventBroker:
             except asyncio.QueueFull:
                 logger.debug("Client queue full — dropping event for slow consumer")
 
-    async def run_subscriber(self, redis_client: redis.Redis, channel: str) -> None:
+    async def run_subscriber(self, redis_client: redis.Redis) -> None:
         """
-        Background task: subscribe to Redis pub/sub channel, fan-out messages to client queues.
-        Runs until cancelled (FastAPI lifespan shutdown).
+        Background task: subscribe to both Redis channels, fan-out enveloped messages to client queues.
+
+        Messages are wrapped in a JSON envelope {"event": "game_state"|"reasoning", "data": "..."}
+        before broadcasting. stream.py unpacks the envelope to set the SSE event= field.
+
+        Changed from Phase 3 signature: channel param removed — subscribes to both channels.
+        main.py must update call site: broker.run_subscriber(redis_client)  (no channel arg).
 
         Uses get_message(timeout=1.0) NOT pubsub.listen() — allows clean CancelledError on shutdown.
         decode_responses=False on redis_client — messages arrive as bytes, decoded here.
         Catches both CancelledError and ConnectionError per Pitfall 2 (redis-py cancellation bug).
         """
+        channels = ["game:state", _REASONING_CHANNEL]
+        event_name_by_channel = {
+            "game:state": "game_state",
+            _REASONING_CHANNEL: "reasoning",
+        }
+
         try:
             async with redis_client.pubsub() as pubsub:
-                await pubsub.subscribe(channel)
-                logger.info("Broker subscribed to Redis channel: %s", channel)
+                await pubsub.subscribe(*channels)
+                logger.info("Broker subscribed to Redis channels: %s", channels)
                 try:
                     while True:
                         message = await pubsub.get_message(
                             ignore_subscribe_messages=True, timeout=1.0
                         )
                         if message is not None:
+                            channel_bytes = message.get("channel", b"game:state")
+                            channel = channel_bytes.decode("utf-8") if isinstance(channel_bytes, bytes) else channel_bytes
                             data = message["data"]
                             if isinstance(data, bytes):
                                 data = data.decode("utf-8")
-                            await self.broadcast(data)
+                            event_name = event_name_by_channel.get(channel, "game_state")
+                            envelope = json.dumps({"event": event_name, "data": data})
+                            await self.broadcast(envelope)
                 except asyncio.CancelledError:
-                    await pubsub.unsubscribe(channel)
+                    await pubsub.unsubscribe(*channels)
                     raise  # propagate shutdown signal cleanly
                 except redis.exceptions.ConnectionError as exc:
                     # Pitfall 2: redis-py cancellation sometimes raises ConnectionError

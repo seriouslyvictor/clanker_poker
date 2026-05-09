@@ -15,6 +15,7 @@ CRITICAL ORDER for late-joiner correctness (Pitfall 4):
 X-Accel-Buffering: no is set automatically by EventSourceResponse — do not set manually.
 """
 import asyncio
+import json
 from collections.abc import AsyncIterable
 
 from fastapi import APIRouter, Request
@@ -57,10 +58,18 @@ async def sse_stream(request: Request) -> AsyncIterable[ServerSentEvent]:
             if await request.is_disconnected():
                 break
             try:
-                data: str = await asyncio.wait_for(queue.get(), timeout=1.0)
+                envelope_str: str = await asyncio.wait_for(queue.get(), timeout=1.0)
+                try:
+                    envelope = json.loads(envelope_str)
+                    event_type = envelope.get("event", "game_state")
+                    raw_data = envelope.get("data", envelope_str)
+                except (ValueError, AttributeError):
+                    # Malformed envelope — treat as game_state for backward compat
+                    event_type = "game_state"
+                    raw_data = envelope_str
                 yield ServerSentEvent(
-                    raw_data=data,
-                    event="game_state",
+                    raw_data=raw_data,
+                    event=event_type,
                     id=str(broker.next_id()),
                 )
             except asyncio.TimeoutError:
