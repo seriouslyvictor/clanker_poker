@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Player model config — defaults from models.config.json; override via PLAYER_MODELS env var
     player_models: list[str] = Field(default_factory=_default_player_models)
     llm_timeout_seconds: int = 8
-    cors_origins: list[str] = ["http://localhost:3000"]
+    cors_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
     redis_url: str = "redis://localhost:6379"
     hand_delay_seconds: int = 3  # D-11: seconds between hands in continuous game loop
 
