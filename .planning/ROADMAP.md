@@ -6,7 +6,7 @@
 - [x] **Phase 2: Game State Machine** - Full Texas Hold'em flow runnable to console with mock decisions
 - [x] **Phase 3: SSE Broadcast** - Real-time game state pushed to all viewers; late-joiner snapshot; heartbeat
 - [ ] **Phase 4: LLM Integration** - 4 AI players with archetypes, guided decisions, streaming reasoning, fallbacks
-- [ ] **Phase 5: Frontend Wiring** - Replace MOCK_STATE with live SSE feed; auto-reconnect; CORS
+- [ ] **Phase 5: Frontend Wiring** - Vite SPA migration, SSE wiring (replace MOCK_STATE), auto-reconnect, CORS
 - [ ] **Phase 6: Viewer Experience** - Idle screen, Start button, anonymous winner predictions
 
 ---
@@ -114,19 +114,25 @@ LLM calls are sequential per decision phase (all players in turn). This is inten
 ---
 
 ### Phase 5: Frontend Wiring
-**Goal**: The existing Next.js UI displays a live game — MOCK_STATE is gone, replaced by real game state arriving over SSE — and the connection is resilient to drops and proxy buffering.
+**Goal**: The Vite React SPA displays a live game — MOCK_STATE is gone, replaced by real game state arriving over SSE — and the connection is resilient to drops and proxy buffering.
 **Depends on**: Phase 3 (SSE endpoint), Phase 4 (real game events)
 **Requirements**: STREAM-04, INFRA-04
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Vite SPA scaffold + full source migration from Next.js (frontend/ directory, fonts, path alias, assets)
+- [ ] 05-02-PLAN.md — Backend CORS update: add localhost:5173 to cors_origins + .env.example documentation
+- [ ] 05-03-PLAN.md — SSE wiring: useGameStream hook + Game.tsx/PokerApp.tsx live state (remove MOCK_STATE)
 
 **Success Criteria** (what must be TRUE):
-1. Opening the Next.js app in a browser shows a live game in progress — player cards, community cards, chip counts, and pot all update in real time without any page refresh
-2. Killing and restoring the network connection causes the client to auto-reconnect within 3 seconds and resume from the correct game position using SSE message IDs — no manual refresh required
+1. Opening the Vite app in a browser shows a live game in progress — player cards, community cards, chip counts, and pot all update in real time without any page refresh
+2. Killing and restoring the network connection causes the client to auto-reconnect within 3 seconds and resume from the correct game position — no manual refresh required
 3. The ReasoningPanel shows streaming reasoning text for each player at each decision phase, matching what the server is sending — no reasoning is lost or duplicated on reconnect
-4. CORS is configured so the Next.js origin can reach the FastAPI SSE endpoint and REST calls — verified by running both on separate ports locally and confirming no browser CORS errors
+4. CORS is configured so the Vite origin (localhost:5173) can reach the FastAPI SSE endpoint and REST calls — verified by running both on separate ports locally and confirming no browser CORS errors
 5. MOCK_STATE is completely removed from Game.tsx — the component only renders from live state
 
 **Notes**
-This is the integration phase. No new game logic, no new backend features. The work is entirely in the Next.js frontend: replacing the static mock, implementing the SSE EventSource client with reconnect logic, and handling the streaming reasoning feed. Read `node_modules/next/dist/docs/` before writing any Next.js code — this version has breaking changes from training data.
+Scope expanded from original roadmap: Next.js is replaced by Vite React SPA (all components were already 'use client' pure React; no SSR, no API routes, no Next.js features in use). Migration is mechanical. SSE wiring is well-defined: named events (game_state, reasoning) consumed via EventSource.addEventListener. STREAM-04 auto-reconnect is satisfied by native EventSource behavior + backend late-joiner snapshot.
 
 **UI hint**: yes
 
@@ -138,8 +144,8 @@ This is the integration phase. No new game logic, no new backend features. The w
 **Requirements**: VIEWER-01, VIEWER-02, VIEWER-03
 
 **Success Criteria** (what must be TRUE):
-1. When no game is running, the app shows an idle screen with project branding, the last game result (if any), and a "Start a Game" button — not a blank page or error state
-2. Clicking "Start a Game" causes a game to begin within 5 seconds; the button becomes disabled immediately on click and stays disabled while a game is in progress — a second viewer cannot double-start
+1. When no game is running, the app shows an idle screen with project branding, the last game result (if any), and a "Start a Game" call-to-action button — not a blank page or error state
+2. Clicking "Start a Game" causes a game to begin within 5 seconds of click; the button becomes disabled immediately on click and stays disabled while a game is in progress — a second viewer cannot double-start
 3. Before showdown, each viewer can select which AI player they predict will win — the prediction UI disappears after they pick, and at showdown the result (correct / incorrect) is shown using localStorage to persist their choice
 4. The idle → game → idle cycle completes cleanly: after showdown the UI returns to the idle screen showing the just-completed game's result
 
@@ -158,5 +164,5 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 | 2. Game State Machine | 5/5 | Complete | 2026-05-03 |
 | 3. SSE Broadcast | 5/5 | Complete | 2026-05-06 |
 | 4. LLM Integration | 0/5 | Not started | - |
-| 5. Frontend Wiring | 0/? | Not started | - |
+| 5. Frontend Wiring | 0/3 | Not started | - |
 | 6. Viewer Experience | 0/? | Not started | - |
