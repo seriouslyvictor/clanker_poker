@@ -164,5 +164,5 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 | 2. Game State Machine | 5/5 | Complete | 2026-05-03 |
 | 3. SSE Broadcast | 5/5 | Complete | 2026-05-06 |
 | 4. LLM Integration | 0/5 | Not started | - |
-| 5. Frontend Wiring | 0/3 | Not started | - |
+| 5. Frontend Wiring | 3/3 | Human UAT | - |
 | 6. Viewer Experience | 0/? | Not started | - |

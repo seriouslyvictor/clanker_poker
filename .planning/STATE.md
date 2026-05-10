@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Phase
-Phase 4 — LLM Integration (planned — ready to execute)
+Phase 5 — Frontend Wiring (human UAT pending)
 
 ## Project Reference
 See: .planning/PROJECT.md
 
 **Core value:** Spectators watch compelling, human-feeling AI poker with transparent reasoning — system never runs without viewers.
-**Current focus:** Phase 4 — LLM Integration
+**Current focus:** Phase 5 — Frontend Wiring
 
 ## Phase Status
 
@@ -16,8 +16,8 @@ See: .planning/PROJECT.md
 | 1 | Backend Foundation | Complete ✓ | FastAPI scaffold, poker math engine, LiteLLM wiring — human UAT passed 2026-05-03 |
 | 2 | Game State Machine | Complete ✓ | cards.py, models.py, game.py, session.py, tests — 5/5 SC verified 2026-05-03 |
 | 3 | SSE Broadcast | Complete ✓ | EventBroker, publisher, SSE endpoint, 6 tests — SC-1–4 human verified 2026-05-06 |
-| 4 | LLM Integration | Planned ◆ | 5 plans (4 waves) — ai/ package, SSE envelope, decision closure, game wiring, tests |
-| 5 | Frontend Wiring | Not started | Replace MOCK_STATE with live SSE; auto-reconnect; CORS |
+| 4 | LLM Integration | Complete ✓ | ai/ package, SSE envelope, decision closure, game wiring, tests — human UAT passed 2026-05-09 |
+| 5 | Frontend Wiring | Planned ◆ | 3 plans (2 waves) — Vite migration + server.fs.allow, CORS + retry:3000 + reasoning snapshot, SSE hook with onopen/URL normalization/reconnect replay |
 | 6 | Viewer Experience | Not started | Idle screen, Start button, anonymous winner predictions |
 
 ## Performance Metrics
