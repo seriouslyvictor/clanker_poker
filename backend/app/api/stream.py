@@ -21,7 +21,7 @@ from collections.abc import AsyncIterable
 from fastapi import APIRouter, Request
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
-from app.broadcast.publisher import SNAPSHOT_KEY
+from app.broadcast.publisher import SNAPSHOT_KEY, REASONING_SNAPSHOT_KEY
 
 router = APIRouter()
 
@@ -51,6 +51,24 @@ async def sse_stream(request: Request) -> AsyncIterable[ServerSentEvent]:
                 raw_data=snapshot.decode("utf-8"),
                 event="game_state",
                 id=str(broker.next_id()),
+                retry=3000,
+            )
+
+        # Send reasoning snapshot to reconnecting clients — recover current hand reasoning state.
+        # lrange returns [] if key doesn't exist (no reasoning yet this hand) — safe to call always.
+        reasoning_deltas: list[bytes] = await redis_client.lrange(
+            REASONING_SNAPSHOT_KEY, 0, -1
+        )
+        if reasoning_deltas:
+            deltas_payload = json.dumps([
+                json.loads(d.decode("utf-8") if isinstance(d, bytes) else d)
+                for d in reasoning_deltas
+            ])
+            yield ServerSentEvent(
+                raw_data=deltas_payload,
+                event="reasoning_snapshot",
+                id=str(broker.next_id()),
+                retry=3000,
             )
 
         # Step 3: Drain live events; check disconnect on each iteration
@@ -71,6 +89,7 @@ async def sse_stream(request: Request) -> AsyncIterable[ServerSentEvent]:
                     raw_data=raw_data,
                     event=event_type,
                     id=str(broker.next_id()),
+                    retry=3000,
                 )
             except asyncio.TimeoutError:
                 continue  # loop back to check is_disconnected
