@@ -21,12 +21,6 @@ interface ReasoningDelta {
 const _base = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
 const SSE_URL = new URL('/api/stream', _base).toString()
 
-/**
- * Apply a single ReasoningDelta to the current reasoning entry array.
- * If an entry for (playerId, phase) already exists, concatenate the delta text.
- * If not, create a new entry.
- * Returns a new array (immutable update).
- */
 function applyDelta(prev: ReasoningEntry[], delta: ReasoningDelta): ReasoningEntry[] {
   const idx = prev.findIndex(
     r => r.playerId === delta.playerId && r.phase === delta.phase
@@ -61,8 +55,7 @@ export function useGameStream(): GameStream {
   useEffect(() => {
     const es = new EventSource(SSE_URL)
 
-    // onopen: fires on initial connect AND after every auto-reconnect.
-    // Without this, connectionState stays 'connecting' even after a successful reconnect.
+    // onopen fires on initial connect AND after every auto-reconnect.
     es.onopen = () => {
       setConnectionState('open')
     }
@@ -70,9 +63,6 @@ export function useGameStream(): GameStream {
     es.addEventListener('game_state', (e: MessageEvent) => {
       try {
         const state: GameState = JSON.parse(e.data as string)
-
-        // Clear reasoning when a new hand starts:
-        // winner transitions from non-null -> null (game reset after WINNER phase).
         if (
           prevWinnerRef.current !== null &&
           prevWinnerRef.current !== undefined &&
@@ -81,7 +71,6 @@ export function useGameStream(): GameStream {
           setReasoning([])
         }
         prevWinnerRef.current = state.winner
-
         setGameState(state)
       } catch (err) {
         console.error('[useGameStream] Failed to parse game_state event:', err)
@@ -97,14 +86,11 @@ export function useGameStream(): GameStream {
       }
     })
 
-    // reasoning_snapshot: sent by backend on every connect (including reconnects).
-    // Contains all accumulated reasoning deltas for the current hand phase.
-    // Replay all deltas in order to rebuild reasoning state -- prevents reasoning loss on reconnect.
+    // reasoning_snapshot: sent on every connect/reconnect — full accumulated deltas.
+    // Rebuild from scratch (authoritative) rather than merging with stale state.
     es.addEventListener('reasoning_snapshot', (e: MessageEvent) => {
       try {
         const deltas: ReasoningDelta[] = JSON.parse(e.data as string)
-        // Rebuild reasoning from scratch using the snapshot -- do not merge with stale state.
-        // The snapshot is the authoritative accumulated state from the backend Redis list.
         setReasoning(() => {
           let rebuilt: ReasoningEntry[] = []
           for (const delta of deltas) {
@@ -119,18 +105,15 @@ export function useGameStream(): GameStream {
 
     es.onerror = () => {
       setConnectionState('connecting')
-      // DO NOT call es.close() here -- native EventSource auto-reconnects.
-      // Calling close() in onerror stops auto-reconnect entirely.
-      // The browser uses retry:3000 (sent by backend) to time the reconnect.
-      // On reconnect, backend resends game_state snapshot + reasoning_snapshot.
+      // DO NOT call es.close() — native EventSource auto-reconnects on error.
+      // Only close in cleanup (return below).
     }
 
     return () => {
-      // Cleanup only: close on component unmount
       es.close()
       setConnectionState('closed')
     }
-  }, []) // empty deps -- single EventSource lifetime per component mount
+  }, [])
 
   return { gameState, reasoning, connectionState }
 }
