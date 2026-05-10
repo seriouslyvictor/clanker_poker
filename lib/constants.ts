@@ -1,17 +1,14 @@
+import rawModels from '../models.config.json';
+
 export const SUITS = ['♠', '♥', '♦', '♣'] as const;
 export const RANKS = ['2','3','4','5','6','7','8','9','10','J','Q','K','A'] as const;
 export const RANK_V: Record<string, number> = {
   2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, J:11, Q:12, K:13, A:14,
 };
 
-export const MODELS = [
-  { id:'gpt4',   name:'GPT-4o',  org:'OpenAI',    color:'#10a37f', deck:'url(/assets/deck-blue.png)'   },
-  { id:'gemini', name:'Gemini',  org:'Google',    color:'#4285f4', deck:'url(/assets/deck-yellow.png)' },
-  { id:'claude', name:'Claude',  org:'Anthropic', color:'#d97757', deck:'url(/assets/deck-red.png)'    },
-  { id:'llama',  name:'Llama 3', org:'Meta',      color:'#a855f7', deck:'url(/assets/deck-ghost.png)'  },
-] as const;
+export const MODELS = rawModels.map(({ id, name, org, color, deck }) => ({ id, name, org, color, deck }));
 
-export type ModelId = 'gpt4' | 'gemini' | 'claude' | 'llama';
+export type ModelId = typeof rawModels[number]['id'];
 export type VoiceMode = 'analytical' | 'balanced' | 'theatrical';
 export type AtmosphereMode = 'felt' | 'neon' | 'noir';
 export type TempoMode = 'cinematic' | 'normal' | 'turbo';
@@ -58,6 +55,6 @@ export const STAKE_COLORS: Record<string, { bg: string; shadow: string; text: st
   black:  { bg:'rgb(31,42,44)',    shadow:'rgb(10,15,16)',     text:'#fff', border:'rgb(80,100,102)' },
 };
 
-export const STAKE_MAP: Record<string, string> = {
-  gpt4:'blue', gemini:'green', claude:'orange', llama:'purple',
-};
+export const STAKE_MAP: Record<string, string> = Object.fromEntries(
+  rawModels.map(m => [m.id, m.stake])
+);

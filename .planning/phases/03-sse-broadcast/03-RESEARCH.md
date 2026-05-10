@@ -19,7 +19,7 @@
 - **D-06:** Broadcasts fire on **phase transitions only** (deal, flop, turn, river, showdown). Individual player actions are NOT broadcast in Phase 3.
 - **D-07:** Each `game_state` event includes a monotonically increasing integer `id:` field. Counter is in-memory (per process).
 - **D-08:** `GET /api/stream` — single endpoint all clients subscribe to.
-- **D-09:** `sse-starlette` library for SSE wire format + per-client `asyncio.Queue` as local broker. Flow: game loop publishes to Redis pub/sub → subscriber asyncio task receives and enqueues into each connected client's queue → client SSE generator drains the queue. `X-Accel-Buffering: no` header set on response.
+- **D-09:** `fastapi.sse.EventSourceResponse` + `ServerSentEvent` (native FastAPI 0.136.1) for SSE wire format + per-client `asyncio.Queue` as local broker. Flow: game loop publishes to Redis pub/sub → subscriber asyncio task receives and enqueues into each connected client's queue → client SSE generator drains the queue. `X-Accel-Buffering: no` header set automatically by `EventSourceResponse`. (sse-starlette from initial discuss session replaced by native FastAPI SSE per research finding — see Critical Finding section.)
 - **D-10:** FastAPI lifespan creates background asyncio task running `GameSession.run()` in a continuous loop. When a hand completes, waits `HAND_DELAY_SECONDS` then starts the next hand.
 - **D-11:** `HAND_DELAY_SECONDS` added to `Settings` in `config.py` with default 3.
 - **D-12:** New files: `api/stream.py`, `broadcast/__init__.py`, `broadcast/broker.py`, `broadcast/publisher.py`, `game_loop.py`.
@@ -709,21 +709,24 @@ async def test_sse_stream_returns_snapshot():
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **How does the game loop broadcast per-phase-transition states?**
    - What we know: `GameSession.run()` returns final `GameState` per hand. D-06 says broadcast fires on "phase transitions: deal, flop, turn, river, showdown."
    - What's unclear: `run_hand()` in `game.py` does not yield intermediate states. To broadcast per-transition, it must be modified.
    - Recommendation: Add a `broadcast_fn: Optional[Callable[[GameState], Awaitable[None]]] = None` parameter to `run_hand()`. Call it after each betting round completes and at showdown. This is the cleanest extension — zero refactor, new optional parameter, Phase 3 passes it in, Phase 2 tests are unaffected.
+   - RESOLVED: Add `broadcast_fn: Optional[Callable[[GameState], Awaitable[None]]] = None` parameter to `run_hand()` in game.py. Call it at 5 transition points (post-pre-flop-deal, post-flop, post-turn, post-river, post-showdown). See Plan 03-02.
 
 2. **What happens when Redis is unavailable at startup?**
    - What we know: D-09 discretion area. The lifespan will try to create a Redis connection.
    - What's unclear: Should startup fail hard, or should the game loop run without broadcasting?
    - Recommendation: Fail hard — log a clear error and let uvicorn report startup failure. The system is non-functional without Redis; silent degradation would be confusing.
+   - RESOLVED: Fail hard — the lifespan raises the exception from `redis_asyncio.from_url()` ping, uvicorn reports startup failure. Silent degradation would be confusing. See Plan 03-04 main.py acceptance criteria.
 
 3. **Should the broker singleton live on `app.state` or as a module-level import?**
    - What we know: FastAPI's `app.state` is the idiomatic place for shared objects. Module-level singletons work but make testing harder (state bleeds between tests).
    - Recommendation: Use `app.state.broker` and `app.state.redis_client` — set in lifespan startup, accessed via dependency injection in endpoints. This allows test fixtures to inject a mock broker.
+   - RESOLVED: Use `app.state.broker` and `app.state.redis_client` set in lifespan startup, accessed via FastAPI dependency injection in endpoints. Allows test fixtures to inject a mock broker. See Plans 03-03 and 03-04.
 
 ---
 

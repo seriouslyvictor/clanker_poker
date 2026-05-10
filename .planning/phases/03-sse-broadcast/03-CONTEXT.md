@@ -34,7 +34,7 @@ This phase still uses mock decisions — LLMs are Phase 4. The broadcast layer i
 - **D-08:** `GET /api/stream` — single endpoint all clients subscribe to. Consistent with existing `/api/` prefix.
 
 ### Fan-out Mechanism
-- **D-09:** `sse-starlette` library for SSE wire format + per-client `asyncio.Queue` as the local broker. Flow: game loop publishes to Redis pub/sub → a subscriber asyncio task receives and enqueues into each connected client's queue → client SSE generator drains the queue. `X-Accel-Buffering: no` header set on the response.
+- **D-09:** Per-client `asyncio.Queue` as local broker. Flow: game loop publishes to Redis pub/sub → subscriber asyncio task receives and enqueues into each connected client's queue → client SSE generator drains the queue. SSE wire format: `fastapi.sse.EventSourceResponse` + `ServerSentEvent` (native FastAPI 0.136.1 — replaces sse-starlette from the initial decision; research confirmed native SSE is built-in, auto-sets `X-Accel-Buffering: no`, handles the `: ping` heartbeat via `fastapi.routing._PING_INTERVAL`, and requires zero additional dependencies). `X-Accel-Buffering: no` header set automatically by `EventSourceResponse`.
 
 ### Game Loop (Phase 3 placeholder)
 - **D-10:** FastAPI lifespan creates a background asyncio task that runs `GameSession.run()` in a continuous loop. When a hand completes, waits `HAND_DELAY_SECONDS` (env var, default 3s) then starts the next hand. This is the placeholder until Phase 6 adds viewer-triggered start.

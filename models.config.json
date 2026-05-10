@@ -1,0 +1,38 @@
+[
+  {
+    "id": "gpt4",
+    "name": "GPT-5.5 Nano",
+    "org": "OpenAI",
+    "color": "#10a37f",
+    "deck": "url(/assets/deck-blue.png)",
+    "litellmModel": "openai/gpt-5-nano",
+    "stake": "blue"
+  },
+  {
+    "id": "gemini",
+    "name": "Gemini Flash",
+    "org": "Google",
+    "color": "#4285f4",
+    "deck": "url(/assets/deck-yellow.png)",
+    "litellmModel": "gemini/gemini-3.1-flash-lite",
+    "stake": "green"
+  },
+  {
+    "id": "deepseek",
+    "name": "DeepSeek v4",
+    "org": "DeepSeek",
+    "color": "#d97757",
+    "deck": "url(/assets/deck-red.png)",
+    "litellmModel": "deepseek/deepseek-v4-flash",
+    "stake": "orange"
+  },
+  {
+    "id": "grok",
+    "name": "Grok",
+    "org": "xAI",
+    "color": "#a855f7",
+    "deck": "url(/assets/deck-ghost.png)",
+    "litellmModel": "xai/grok-4-1-fast-reasoning",
+    "stake": "purple"
+  }
+]
