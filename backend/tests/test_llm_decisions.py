@@ -17,7 +17,6 @@ from app.ai.decision import (
     _parse_response,
     make_llm_decision_fn,
     reconstruct_valid_actions,
-    INDIVIDUAL_TIMEOUT_S,
 )
 from app.engine.models import Action, Card, GameState, Player
 

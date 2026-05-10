@@ -63,10 +63,19 @@ class TestGameSessionInit:
         assert ids == ['gpt4', 'gemini', 'deepseek', 'grok']
 
     def test_player_names(self):
-        """Phase 4 D-13: player names match models.config.json."""
+        """Phase 4 D-13: player names match models.config.json (read from config, not hardcoded)."""
+        import json
+        from pathlib import Path
+        config_candidates = [
+            Path(__file__).parent.parent.parent / "models.config.json",
+            Path(__file__).parent.parent.parent.parent.parent.parent / "models.config.json",
+        ]
+        config_path = next((p for p in config_candidates if p.exists()), None)
+        assert config_path is not None, "models.config.json not found"
+        expected_names = [e["name"] for e in json.loads(config_path.read_text(encoding="utf-8"))]
         session = GameSession(n_players=4)
         names = [p.name for p in session.players]
-        assert names == ['GPT-5.5 Nano', 'Gemini Flash', 'DeepSeek v4', 'Grok']
+        assert names == expected_names
 
     def test_player_org(self):
         """Phase 4 D-13: player orgs match models.config.json."""
@@ -87,14 +96,21 @@ class TestGameSessionInit:
         assert 'deck-blue' in session.players[0].deck  # GPT-5.5 Nano deck
 
     def test_player_models_dict(self):
-        """Phase 4 D-13: player_models dict maps player_id -> litellm model string."""
+        """Phase 4 D-13: player_models dict maps player_id -> litellm model string (from config)."""
+        import json
+        from pathlib import Path
+        config_candidates = [
+            Path(__file__).parent.parent.parent / "models.config.json",
+            Path(__file__).parent.parent.parent.parent.parent.parent / "models.config.json",
+        ]
+        config_path = next((p for p in config_candidates if p.exists()), None)
+        assert config_path is not None, "models.config.json not found"
+        entries = json.loads(config_path.read_text(encoding="utf-8"))
+        expected = {e["id"]: e["litellmModel"] for e in entries}
         session = GameSession(n_players=4)
         assert hasattr(session, 'player_models')
         assert len(session.player_models) == 4
-        assert session.player_models['gpt4'] == 'openai/gpt-5-nano'
-        assert session.player_models['gemini'] == 'gemini/gemini-3.1-flash-lite-preview'
-        assert session.player_models['deepseek'] == 'deepseek/deepseek-v4-flash'
-        assert session.player_models['grok'] == 'xai/grok-4'
+        assert session.player_models == expected
 
     def test_n_players_cap_respected(self):
         """n_players=3 returns first 3 players from config; player_models has 3 entries."""

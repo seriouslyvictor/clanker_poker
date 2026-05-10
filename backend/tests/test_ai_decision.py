@@ -284,7 +284,7 @@ class TestActionFieldName:
         import re
         from pathlib import Path
         decision_path = Path(__file__).parent.parent / "app" / "ai" / "decision.py"
-        content = decision_path.read_text()
+        content = decision_path.read_text(encoding="utf-8")
         # Ensure no wrong field usage
         matches = re.findall(r"Action\(type=", content)
         assert len(matches) == 0, f"Found Action(type=...) in decision.py: {matches}"
@@ -293,7 +293,7 @@ class TestActionFieldName:
         """Verify decision.py uses action_type= field"""
         from pathlib import Path
         decision_path = Path(__file__).parent.parent / "app" / "ai" / "decision.py"
-        content = decision_path.read_text()
+        content = decision_path.read_text(encoding="utf-8")
         assert "action_type=" in content
 
 
@@ -307,7 +307,7 @@ class TestCancelledError:
         import re
         from pathlib import Path
         decision_path = Path(__file__).parent.parent / "app" / "ai" / "decision.py"
-        content = decision_path.read_text()
+        content = decision_path.read_text(encoding="utf-8")
         # Find all CancelledError except blocks
         # Check that "CancelledError" appears and is always followed by "raise"
         blocks = re.findall(
