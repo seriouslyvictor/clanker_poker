@@ -23,10 +23,6 @@ from __future__ import annotations
 from app.ai.archetypes import Archetype
 from app.engine.models import GameState, Player
 
-# Token budget guardrails (AI-SPEC 4b.4)
-MAX_SYSTEM_TOKENS = 150  # identity + archetype + format instruction
-MAX_USER_TOKENS   = 250  # hand state + math + actions + opponents
-
 _FORMAT_INSTRUCTION = (
     "\n\nRESPONSE FORMAT — output ONLY this fenced JSON block, no other text:\n"
     "```json\n"
@@ -102,6 +98,9 @@ def build_user_prompt(
         raise_max = valid_acts_info.get("raise_max", player.chips)
         acts.append(f"raise {raise_min}-{raise_max}")
     actions_line = ", ".join(acts) if acts else "fold"
+    # Explicitly list only valid action *words* so models don't hallucinate unavailable ones
+    valid_words = sorted(valid_acts_info.get("valid_types", {"fold"}))
+    valid_words_str = ", ".join(f'"{w}"' for w in valid_words)
 
     # Opponent summary — chip count + last action this street (D-05)
     opponents = []
@@ -116,7 +115,7 @@ def build_user_prompt(
         f"Hand: [{hole}]. Board: [{board}]. Phase: {game_state.phase}.",
         f"Pot: {pot}. Your chips: {player.chips}.",
         f"Win probability: {win_prob:.0%}. Pot odds: {pot_odds:.0%}. Hand strength: {hand_str_display}.",
-        f"Available actions: {actions_line}.",
+        f"Available actions: {actions_line}. You MUST use one of these action words: {valid_words_str}.",
         f"Opponents: {opp_line}.",
     ]
     return "\n".join(lines)

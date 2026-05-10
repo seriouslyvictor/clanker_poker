@@ -11,6 +11,7 @@ from app.api.stream import router as stream_router
 from app.broadcast.broker import EventBroker
 from app.config import get_settings
 from app.game_loop import run_game_loop
+from app.logging_config import setup_logging
 
 
 @asynccontextmanager
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     All shared state lives on app.state — not module globals.
     This supports test fixture injection (replace app.state.broker with a mock).
     """
+    setup_logging()
     settings = get_settings()
 
     # 1. Patch SSE ping interval — must happen before any EventSourceResponse is created

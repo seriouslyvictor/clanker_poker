@@ -20,11 +20,14 @@ Phase 4: _load_players_from_config() replaces _make_players() mock (D-13).
 from __future__ import annotations
 
 import json
+import logging
 import pathlib
 from typing import Optional
 
 from app.engine.game import run_hand, mock_decision, BroadcastFn
 from app.engine.models import Player, GameState, DecisionFn
+
+logger = logging.getLogger(__name__)
 
 
 def _find_models_config() -> pathlib.Path:
@@ -139,29 +142,41 @@ class GameSession:
         completed_hands: list[GameState] = []
 
         for hand_num in range(n_hands):
-            # Determine which players are active this hand (chips > 0)
             active_players = [p for p in self.players if p.chips > 0]
             if len(active_players) < 2:
-                # Session over — not enough players to continue
                 break
 
-            # Run the hand — run_hand deep copies internally; chip updates come back in GameState.players
+            dealer_name = self.players[self.dealer_seat].name
+            stacks = "  ".join(f"{p.name} {p.chips}" for p in self.players)
+            logger.info(
+                "[bold blue]── Hand %d/%d ──[/bold blue]  Dealer: [blue]%s[/blue]",
+                hand_num + 1, n_hands, dealer_name,
+            )
+            logger.info("  Stacks: %s", stacks)
+
             final_state = await run_hand(
-                players=self.players,  # run_hand deep copies internally
+                players=self.players,
                 dealer_seat=self.dealer_seat,
                 big_blind=self.big_blind,
                 decision_fn=decision_fn,
                 broadcast_fn=broadcast_fn,
             )
 
-            # Update persistent player chip counts from the completed hand
-            # run_hand returns GameState.players with updated chips
             for i, returned_player in enumerate(final_state.players):
                 self.players[i].chips = returned_player.chips
 
-            completed_hands.append(final_state)
+            winner = next((p for p in final_state.players if p.is_winner), None)
+            hand_name = final_state.winner_hand or "last standing"
+            pot_won = sum(p.chips for p in final_state.players) - sum(p.chips for p in self.players) + (final_state.pot or 0)
+            if winner:
+                logger.info(
+                    "[green]Hand %d → %s[/green]  (%s)",
+                    hand_num + 1, winner.name, hand_name,
+                )
+            stacks_after = "  ".join(f"{p.name} {p.chips}" for p in self.players)
+            logger.info("  Stacks: %s", stacks_after)
 
-            # Rotate dealer button clockwise (always advances, regardless of elimination)
+            completed_hands.append(final_state)
             self.dealer_seat = (self.dealer_seat + 1) % self.n_players
 
         return completed_hands

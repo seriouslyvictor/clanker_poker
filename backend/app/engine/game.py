@@ -19,6 +19,7 @@ decision function is called for that seat. This prevents the infinite-loop / ear
 termination bugs documented in RESEARCH.md Pitfall 1.
 """
 import copy
+import logging
 from typing import Awaitable, Callable, Optional
 
 from treys import Deck
@@ -28,6 +29,10 @@ from app.engine.models import (
     Card, Action, ActionType, Player, GameState, BettingRoundState, DecisionFn
 )
 from app.engine.poker_math import evaluate_hand
+
+logger = logging.getLogger(__name__)
+
+_ACTION_COLOR = {"fold": "yellow", "call": "white", "raise": "green", "check": "white"}
 
 
 # ---------------------------------------------------------------------------
@@ -244,6 +249,15 @@ async def run_betting_round(
             # No chips change — player passes
             players[current_seat].action = "check"
 
+        # Log the action with color by type
+        color = _ACTION_COLOR.get(action_type, "white")
+        amount_str = f" {action.amount}" if action_type in ("call", "raise") and action.amount else ""
+        logger.info(
+            "  [%s]%-18s %-6s%s[/%s]  (%d chips)",
+            color, players[current_seat].name, action_type, amount_str, color,
+            players[current_seat].chips,
+        )
+
         # Update GameState players so decision_fn sees current state
         game_state.players = players
         # Sync current_bet after raise may have updated it (D-03)
@@ -364,7 +378,10 @@ async def run_hand(
         show_cards=False,
     )
 
-    # Broadcast pre-flop state
+    logger.info(
+        "[blue]► PRE-FLOP[/blue]  Pot: %d  Blinds: SB=%d BB=%d",
+        game_state.pot, sb_amount, big_blind,
+    )
     await _maybe_broadcast(game_state, broadcast_fn)
 
     # -------------------------------------------------------------------------
@@ -390,7 +407,8 @@ async def run_hand(
     game_state.phase = "flop"
     game_state.players = players
 
-    # Broadcast flop state
+    board_str = " ".join(f"{c.r}{c.s}" for c in flop_cards)
+    logger.info("[blue]► FLOP[/blue]  [%s]  Pot: %d", board_str, game_state.pot)
     await _maybe_broadcast(game_state, broadcast_fn)
 
     game_state, players = await run_betting_round(
@@ -412,7 +430,8 @@ async def run_hand(
     game_state.phase = "turn"
     game_state.players = players
 
-    # Broadcast turn state
+    board_str = " ".join(f"{c.r}{c.s}" for c in game_state.community_cards)
+    logger.info("[blue]► TURN[/blue]   [%s]  Pot: %d", board_str, game_state.pot)
     await _maybe_broadcast(game_state, broadcast_fn)
 
     game_state, players = await run_betting_round(
@@ -434,7 +453,8 @@ async def run_hand(
     game_state.phase = "river"
     game_state.players = players
 
-    # Broadcast river state
+    board_str = " ".join(f"{c.r}{c.s}" for c in game_state.community_cards)
+    logger.info("[blue]► RIVER[/blue]  [%s]  Pot: %d", board_str, game_state.pot)
     await _maybe_broadcast(game_state, broadcast_fn)
 
     game_state, players = await run_betting_round(
@@ -452,6 +472,7 @@ async def run_hand(
     # -------------------------------------------------------------------------
     game_state.phase = "showdown"
     game_state.show_cards = True
+    logger.info("[blue]► SHOWDOWN[/blue]  Pot: %d", game_state.pot)
 
     board_ints = [new_card(c.r, c.s) for c in game_state.community_cards]
 
@@ -472,15 +493,21 @@ async def run_hand(
     winner_hole_ints = [new_card(c.r, c.s) for c in players[winner_idx].hole_cards]
     winner_result = evaluate_hand(winner_hole_ints, board_ints)
 
-    # Award pot to winner
     players[winner_idx].chips += game_state.pot
     players[winner_idx].is_winner = True
+    hand_name = winner_result.get("hand_name") or "unknown"
+    logger.info(
+        "[green]%s wins %d chips[/green]  with [green]%s[/green]  | hole: %s",
+        players[winner_idx].name,
+        game_state.pot,
+        hand_name,
+        " ".join(f"{c.r}{c.s}" for c in players[winner_idx].hole_cards),
+    )
     game_state.pot = 0
     game_state.winner = winner_idx
-    game_state.winner_hand = winner_result.get("hand_name") or ""
+    game_state.winner_hand = hand_name
     game_state.players = players
 
-    # Broadcast showdown state
     await _maybe_broadcast(game_state, broadcast_fn)
 
     return game_state

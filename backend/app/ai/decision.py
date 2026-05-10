@@ -37,6 +37,7 @@ from app.ai.budget import BudgetTracker, CircuitBreaker
 from app.ai.models import LLMDecisionResponse
 from app.ai.prompt import build_system_prompt, build_user_prompt
 from app.broadcast.publisher import publish_reasoning
+from app.config import get_settings
 from app.engine.cards import new_card
 from app.engine.models import Action, Player, GameState
 
@@ -48,7 +49,10 @@ logger = logging.getLogger(__name__)
 # Regex: extracts the JSON object from a ```json ... ``` fenced block (D-06)
 _JSON_FENCE_RE = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
 
-INDIVIDUAL_TIMEOUT_S = 2.0  # per-call hard deadline (D-11)
+REASONING_TIMEOUT_S = 45.0  # extended deadline for reasoning models (grok, o-series, etc.)
+
+# Models that require an extended timeout — name fragments, matched via `in`
+_REASONING_MODEL_FRAGMENTS = ("reasoning", "think", "/o1", "/o3", "/o4")
 
 
 def reconstruct_valid_actions(player: Player, game_state: GameState) -> dict:
@@ -166,7 +170,7 @@ def make_llm_decision_fn(
             player.id, game_state.phase, redis_client,
         )
 
-        if raw_text is None:
+        if not raw_text:  # None (timeout/error) or "" (empty stream — bad model response)
             # Failure already logged in _call_llm_streaming
             circuit.record_error(litellm_model)
             fallback_action = await _fallback_action(
@@ -195,6 +199,20 @@ def make_llm_decision_fn(
                 phase=game_state.phase, action=fallback_action.action_type, amount=fallback_action.amount,
             )
             return fallback_action
+
+        # call→check normalization: models confuse them when call_amount=0 (format hint shows both)
+        if (parsed.action == "call"
+                and "call" not in valid_acts_info["valid_types"]
+                and "check" in valid_acts_info["valid_types"]):
+            logger.info("[%s] Remapping 'call' → 'check' (call_amount=0)", player.name)
+            parsed = parsed.model_copy(update={"action": "check", "amount": 0})
+
+        action_color = "green" if parsed.action == "raise" else "yellow" if parsed.action == "fold" else "white"
+        logger.info(
+            "[cyan]%s[/cyan] → [%s]%s %s[/%s] | %.80r",
+            player.name, action_color, parsed.action,
+            parsed.amount or "", action_color, parsed.reasoning,
+        )
 
         # Validate action is in valid actions (AI-04)
         if parsed.action not in valid_acts_info["valid_types"]:
@@ -266,6 +284,12 @@ async def _call_llm_streaming(
     This plan's version is authoritative: CancelledError inside the async-for loop
     MUST be re-raised immediately (see: except asyncio.CancelledError: raise).
     """
+    is_reasoning = any(frag in model for frag in _REASONING_MODEL_FRAGMENTS)
+    base_timeout = get_settings().llm_timeout_seconds
+    call_timeout = REASONING_TIMEOUT_S if is_reasoning else float(base_timeout)
+
+    logger.info("[cyan]⚡ %s[/cyan] → %s | phase=%s | timeout=%.0fs", model, player_id, phase, call_timeout)
+
     try:
         stream = await asyncio.wait_for(
             acompletion(
@@ -275,11 +299,12 @@ async def _call_llm_streaming(
                     {"role": "user",   "content": user_prompt},
                 ],
                 stream=True,
-                max_tokens=300,           # hard cap — prevents token blowout (INFRA-05)
+                max_tokens=5000,      # generous cap — conciseness enforced at prompt level
                 temperature=0.7,
-                timeout=INDIVIDUAL_TIMEOUT_S,  # HTTP-level cleanup (Pitfall 1)
+                timeout=call_timeout,
+                drop_params=True,     # silently drop unsupported params (e.g. gpt-5 temperature)
             ),
-            timeout=INDIVIDUAL_TIMEOUT_S,      # asyncio hard wall (Pitfall 1)
+            timeout=call_timeout,
         )
     except asyncio.CancelledError:
         raise  # NEVER swallow CancelledError — game loop shutdown signal
@@ -307,6 +332,8 @@ async def _call_llm_streaming(
     except Exception as exc:
         logger.warning("[%s] Stream iteration error: %s", model, exc)
         return None
+
+    logger.info("[cyan]%s[/cyan] ← %d chars", model, len(full_text))
 
     # Signal end of this player's reasoning stream to SSE clients (D-02)
     if redis_client is not None:

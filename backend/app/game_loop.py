@@ -40,27 +40,25 @@ async def run_game_loop(redis_client: redis_asyncio.Redis, settings: Settings) -
       5. Run session.run() with LLM decision_fn + broadcast_fn
       6. Log budget summary at session end
     """
-    logger.info("Game loop started with LLM decisions (hand_delay=%ds)", settings.hand_delay_seconds)
+    logger.info("Game loop started — hand_delay=%ds", settings.hand_delay_seconds)
 
     while True:
         try:
-            # Fresh session: config-driven players + starting stacks
-            # NOTE: Viewer presence check intentionally deferred to Phase 6 (VIEWER-02 -- Start a Game
-            # button). Game loop runs unconditionally in Phase 4 for development purposes.
             session = GameSession(n_players=4, starting_chips=1000, big_blind=20)
-
-            # Archetype assignment: random shuffle, unique per player (D-08)
             archetypes = assign_archetypes(session.players)
-            logger.info(
-                "Archetypes assigned: %s",
-                {pid: arch.name for pid, arch in archetypes.items()},
-            )
 
-            # Per-session budget protection (D-15, D-16, INFRA-05)
+            logger.info("[bold cyan]═══ NEW SESSION ═══[/bold cyan]")
+            for p in session.players:
+                arch = archetypes.get(p.id)
+                model = session.player_models.get(p.id, "?")
+                logger.info(
+                    "  [cyan]%-18s[/cyan] %-20s  %d chips  [dim]%s[/dim]",
+                    p.name, f"({arch.name})" if arch else "", p.chips, model,
+                )
+
             budget = BudgetTracker()
             circuit = CircuitBreaker(threshold=3)
 
-            # LLM decision fn closure — matches DecisionFn signature exactly
             decision_fn = make_llm_decision_fn(
                 archetypes=archetypes,
                 redis_client=redis_client,
@@ -68,16 +66,15 @@ async def run_game_loop(redis_client: redis_asyncio.Redis, settings: Settings) -
                 circuit=circuit,
                 player_models=session.player_models,
             )
-
-            # broadcast_fn: partial binds redis_client — called after each player action (D-03)
             broadcast_fn = partial(publish, redis_client)
 
-            logger.info("Starting new GameSession (10 hands, LLM decisions)")
             await session.run(n_hands=10, decision_fn=decision_fn, broadcast_fn=broadcast_fn)
 
-            # Log session spend at end (D-15)
-            logger.info("GameSession complete — budget: %s", budget.summary())
-            logger.info("Waiting %ds before next session", settings.hand_delay_seconds)
+            logger.info("[bold green]Session complete[/bold green]")
+            for p in session.players:
+                logger.info("  [green]%-18s[/green]  %d chips", p.name, p.chips)
+            logger.info("Budget: %s", budget.summary())
+            logger.info("Waiting %ds before next session...", settings.hand_delay_seconds)
 
             await asyncio.sleep(settings.hand_delay_seconds)
 
