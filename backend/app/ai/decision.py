@@ -37,7 +37,6 @@ from app.ai.budget import BudgetTracker, CircuitBreaker
 from app.ai.models import LLMDecisionResponse
 from app.ai.prompt import build_system_prompt, build_user_prompt
 from app.broadcast.publisher import publish_reasoning
-from app.config import get_settings
 from app.engine.cards import new_card
 from app.engine.models import Action, Player, GameState
 
@@ -49,10 +48,7 @@ logger = logging.getLogger(__name__)
 # Regex: extracts the JSON object from a ```json ... ``` fenced block (D-06)
 _JSON_FENCE_RE = re.compile(r"```json\s*(\{.*?\})\s*```", re.DOTALL)
 
-REASONING_TIMEOUT_S = 45.0  # extended deadline for reasoning models (grok, o-series, etc.)
-
-# Models that require an extended timeout — name fragments, matched via `in`
-_REASONING_MODEL_FRAGMENTS = ("reasoning", "think", "/o1", "/o3", "/o4")
+CALL_TIMEOUT_S = 45.0  # baseline for all models — reasoning or not
 
 
 def reconstruct_valid_actions(player: Player, game_state: GameState) -> dict:
@@ -284,11 +280,7 @@ async def _call_llm_streaming(
     This plan's version is authoritative: CancelledError inside the async-for loop
     MUST be re-raised immediately (see: except asyncio.CancelledError: raise).
     """
-    is_reasoning = any(frag in model for frag in _REASONING_MODEL_FRAGMENTS)
-    base_timeout = get_settings().llm_timeout_seconds
-    call_timeout = REASONING_TIMEOUT_S if is_reasoning else float(base_timeout)
-
-    logger.info("[cyan]⚡ %s[/cyan] → %s | phase=%s | timeout=%.0fs", model, player_id, phase, call_timeout)
+    logger.info("[cyan]⚡ %s[/cyan] → %s | phase=%s | timeout=%.0fs", model, player_id, phase, CALL_TIMEOUT_S)
 
     try:
         stream = await asyncio.wait_for(
@@ -299,12 +291,10 @@ async def _call_llm_streaming(
                     {"role": "user",   "content": user_prompt},
                 ],
                 stream=True,
-                max_tokens=5000,      # generous cap — conciseness enforced at prompt level
-                temperature=0.7,
-                timeout=call_timeout,
-                drop_params=True,     # silently drop unsupported params (e.g. gpt-5 temperature)
+                max_tokens=5000,  # conciseness enforced at prompt level, not token cap
+                timeout=CALL_TIMEOUT_S,
             ),
-            timeout=call_timeout,
+            timeout=CALL_TIMEOUT_S,
         )
     except asyncio.CancelledError:
         raise  # NEVER swallow CancelledError — game loop shutdown signal
