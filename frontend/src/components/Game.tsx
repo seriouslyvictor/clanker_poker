@@ -1,5 +1,5 @@
-import type { GameState } from './types';
-import { MODELS, THEMES } from '@/lib/constants';
+import type { GameState, ReasoningEntry } from './types';
+import { THEMES } from '@/lib/constants';
 import Card from './Card';
 import PlayerSeat from './PlayerSeat';
 import ReasoningPanel from './ReasoningPanel';
@@ -9,6 +9,8 @@ import ConfettiBurst from './ConfettiBurst';
 
 interface GameProps {
   theme: (typeof THEMES)[keyof typeof THEMES];
+  gameState: GameState | null;
+  reasoning: ReasoningEntry[];
 }
 
 const PHASE_DISPLAY: Record<string, string> = {
@@ -17,38 +19,20 @@ const PHASE_DISPLAY: Record<string, string> = {
   SHOWDOWN: 'SHOWDOWN', WINNER: 'WINNER!',
 };
 
-// Static scaffold — game logic will be wired up separately
-const MOCK_STATE: GameState = {
-  phase: 'FLOP',
-  pot: 175,
-  communityCards: [
-    { s: '♠', r: 'A' },
-    { s: '♥', r: 'K' },
-    { s: '♦', r: '7' },
-  ],
-  players: MODELS.map((m, i) => ({
-    ...m,
-    chips: [1200, 850, 1000, 950][i],
-    holeCards: [
-      [{ s: '♠', r: 'Q' }, { s: '♥', r: 'J' }],
-      [{ s: '♦', r: '9' }, { s: '♣', r: '8' }],
-      [{ s: '♠', r: 'K' }, { s: '♥', r: 'A' }],
-      [{ s: '♣', r: '2' }, { s: '♦', r: '5' }],
-    ][i],
-    action: (['call', 'raise', null, 'fold'] as const)[i],
-    bet: [50, 100, 0, 0][i],
-    isFolded: i === 3,
-    isActive: i === 2,
-    isWinner: false,
-  })),
-  showCards: false,
-  reasoning: [],
-  winner: null,
-  winnerHand: '',
-};
+export default function Game({ theme, gameState, reasoning }: GameProps) {
+  if (!gameState) {
+    return (
+      <div style={{
+        display: 'flex', height: '100vh', alignItems: 'center', justifyContent: 'center',
+        background: theme.tableBg, fontFamily: 'var(--font-rajdhani), sans-serif',
+        fontWeight: 700, fontSize: 22, letterSpacing: '-0.04em', color: 'rgba(255,255,255,0.4)',
+      }}>
+        Connecting to game...
+      </div>
+    );
+  }
 
-export default function Game({ theme }: GameProps) {
-  const { players, communityCards, pot, phase, showCards, reasoning, winner, winnerHand } = MOCK_STATE;
+  const { players, communityCards, pot, phase, showCards, winner, winnerHand } = gameState;
   const phaseDisplay = PHASE_DISPLAY[phase] ?? phase;
 
   return (

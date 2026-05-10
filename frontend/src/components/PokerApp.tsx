@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Settings } from './types';
 import { THEMES } from '@/lib/constants';
+import { useGameStream } from '../hooks/useGameStream';
 import Game from './Game';
 import TweaksPanel from './TweaksPanel';
 
@@ -9,6 +10,7 @@ const DEFAULT_SETTINGS: Settings = { tempo: 'normal', voice: 'balanced', atmosph
 export default function PokerApp() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [tweaksVisible, setTweaksVisible] = useState(false);
+  const { gameState, reasoning } = useGameStream();
 
   const onChange = (key: keyof Settings, val: string) => {
     setSettings(prev => ({ ...prev, [key]: val }));
@@ -35,7 +37,7 @@ export default function PokerApp() {
         TWEAKS
       </button>
 
-      <Game theme={theme} />
+      <Game theme={theme} gameState={gameState} reasoning={reasoning} />
 
       <TweaksPanel
         settings={settings}
