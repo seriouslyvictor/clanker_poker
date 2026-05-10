@@ -49,6 +49,13 @@ See: .planning/PROJECT.md
 - Archetype parameters (hand_looseness, raise_freq, bluff_freq, tilt_threshold) drive code-level decision biases — LLM receives archetype description in prompt for narrative voice only.
 - Budget protection: per-game spend tracked, circuit breaker per provider, 8s global deadline.
 
+### Pending Todos
+
+| File | Title | Area |
+|------|-------|------|
+| [2026-05-10-configurable-hands-per-session.md](./todos/pending/2026-05-10-configurable-hands-per-session.md) | Configurable number of hands per session | backend |
+| [2026-05-10-optional-archetypes-mode.md](./todos/pending/2026-05-10-optional-archetypes-mode.md) | Optional archetypes mode for sessions | backend |
+
 ### Active Blockers
 None — initialization complete.
 
