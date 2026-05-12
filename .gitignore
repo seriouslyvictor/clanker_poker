@@ -51,3 +51,7 @@ backend/app/engine/__pycache__/
 backend/tests/__pycache__/
 backend/.python-version
 *.pyc
+frontend/node_modules/
+frontend/dist/
+frontend/vite.config.d.ts
+frontend/vite.config.js
