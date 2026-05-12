@@ -7,6 +7,7 @@ import ReasoningPanel from './ReasoningPanel';
 import StakeChip from './StakeChip';
 import GoldCrownChip from './GoldCrownChip';
 import ConfettiBurst from './ConfettiBurst';
+import PredictionWidget from './PredictionWidget';
 
 interface GameProps {
   theme: (typeof THEMES)[keyof typeof THEMES];
@@ -20,6 +21,8 @@ const PHASE_DISPLAY: Record<string, string> = {
   FLOP: 'THE FLOP', TURN: 'THE TURN', RIVER: 'THE RIVER',
   SHOWDOWN: 'SHOWDOWN', WINNER: 'WINNER!',
 };
+
+const PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER']);
 
 export default function Game({ theme, gameState, reasoning, connectionState }: GameProps) {
   if (!gameState) {
@@ -164,6 +167,14 @@ export default function Game({ theme, gameState, reasoning, connectionState }: G
               <div style={{ fontFamily: 'var(--font-rajdhani), sans-serif', fontWeight: 600, fontSize: 14, letterSpacing: '-0.02em', color: 'rgba(255,255,255,0.2)' }}>Next round in 5s...</div>
             </div>
           </div>
+        )}
+
+        {/* Prediction Widget — visible during PRE-FLOP, FLOP, TURN, RIVER only */}
+        {gameState && PREDICTION_PHASES.has(gameState.phase) && (
+          <PredictionWidget
+            gameState={gameState}
+            players={gameState.players}
+          />
         )}
       </div>
     </div>
