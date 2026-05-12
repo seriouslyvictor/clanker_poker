@@ -10,7 +10,7 @@ const DEFAULT_SETTINGS: Settings = { tempo: 'normal', voice: 'balanced', atmosph
 export default function PokerApp() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [tweaksVisible, setTweaksVisible] = useState(false);
-  const { gameState, reasoning } = useGameStream();
+  const { gameState, reasoning, connectionState } = useGameStream();
 
   const onChange = (key: keyof Settings, val: string) => {
     setSettings(prev => ({ ...prev, [key]: val }));
@@ -37,7 +37,7 @@ export default function PokerApp() {
         TWEAKS
       </button>
 
-      <Game theme={theme} gameState={gameState} reasoning={reasoning} />
+      <Game theme={theme} gameState={gameState} reasoning={reasoning} connectionState={connectionState} />
 
       <TweaksPanel
         settings={settings}

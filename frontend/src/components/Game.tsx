@@ -1,4 +1,5 @@
 import type { GameState, ReasoningEntry } from './types';
+import type { ConnectionState } from '../hooks/useGameStream';
 import { THEMES } from '@/lib/constants';
 import Card from './Card';
 import PlayerSeat from './PlayerSeat';
@@ -11,6 +12,7 @@ interface GameProps {
   theme: (typeof THEMES)[keyof typeof THEMES];
   gameState: GameState | null;
   reasoning: ReasoningEntry[];
+  connectionState: ConnectionState;
 }
 
 const PHASE_DISPLAY: Record<string, string> = {
@@ -19,7 +21,7 @@ const PHASE_DISPLAY: Record<string, string> = {
   SHOWDOWN: 'SHOWDOWN', WINNER: 'WINNER!',
 };
 
-export default function Game({ theme, gameState, reasoning }: GameProps) {
+export default function Game({ theme, gameState, reasoning, connectionState }: GameProps) {
   if (!gameState) {
     return (
       <div style={{
@@ -103,6 +105,24 @@ export default function Game({ theme, gameState, reasoning }: GameProps) {
             <PlayerSeat player={players[3]} showCards={showCards} reasoning={reasoning} />
           </div>
         </div>
+
+        {/* Reconnecting overlay — shown when connection drops with a live gameState */}
+        {connectionState === 'connecting' && gameState !== null && (
+          <div style={{
+            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100,
+          }}>
+            <div style={{
+              background: 'rgb(24,36,38)', border: '3px solid rgb(55,68,71)',
+              borderRadius: 14, padding: '18px 36px',
+              fontFamily: 'var(--font-rajdhani), sans-serif',
+              fontWeight: 700, fontSize: 20, letterSpacing: '-0.04em',
+              color: 'rgba(255,255,255,0.55)',
+            }}>
+              Reconnecting...
+            </div>
+          </div>
+        )}
 
         {/* Winner overlay */}
         {phase === 'WINNER' && winner !== null && (
