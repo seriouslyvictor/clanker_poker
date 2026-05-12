@@ -22,7 +22,7 @@ const PHASE_DISPLAY: Record<string, string> = {
   SHOWDOWN: 'SHOWDOWN', WINNER: 'WINNER!',
 };
 
-const PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER']);
+const PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER', 'WINNER']);
 
 export default function Game({ theme, gameState, reasoning, connectionState }: GameProps) {
   if (!gameState) {
@@ -169,7 +169,7 @@ export default function Game({ theme, gameState, reasoning, connectionState }: G
           </div>
         )}
 
-        {/* Prediction Widget — visible during PRE-FLOP, FLOP, TURN, RIVER only */}
+        {/* Prediction Widget — visible during PRE-FLOP, FLOP, TURN, RIVER, WINNER */}
         {gameState && PREDICTION_PHASES.has(gameState.phase) && (
           <PredictionWidget
             gameState={gameState}
