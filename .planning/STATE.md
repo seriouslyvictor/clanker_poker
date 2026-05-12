@@ -1,13 +1,13 @@
 # Project State
 
 ## Current Phase
-Phase 5 — Frontend Wiring (human UAT pending)
+Phase 6 — Viewer Experience (context gathered, ready to plan)
 
 ## Project Reference
 See: .planning/PROJECT.md
 
 **Core value:** Spectators watch compelling, human-feeling AI poker with transparent reasoning — system never runs without viewers.
-**Current focus:** Phase 5 — Frontend Wiring
+**Current focus:** Phase 6 — Viewer Experience
 
 ## Phase Status
 
@@ -17,8 +17,8 @@ See: .planning/PROJECT.md
 | 2 | Game State Machine | Complete ✓ | cards.py, models.py, game.py, session.py, tests — 5/5 SC verified 2026-05-03 |
 | 3 | SSE Broadcast | Complete ✓ | EventBroker, publisher, SSE endpoint, 6 tests — SC-1–4 human verified 2026-05-06 |
 | 4 | LLM Integration | Complete ✓ | ai/ package, SSE envelope, decision closure, game wiring, tests — human UAT passed 2026-05-09 |
-| 5 | Frontend Wiring | Planned ◆ | 3 plans (2 waves) — Vite migration + server.fs.allow, CORS + retry:3000 + reasoning snapshot, SSE hook with onopen/URL normalization/reconnect replay |
-| 6 | Viewer Experience | Not started | Idle screen, Start button, anonymous winner predictions |
+| 5 | Frontend Wiring | Complete ✓ | Vite SPA scaffold, CORS + reasoning snapshot, useGameStream hook — 7/8 UAT passed, 1 gap fixed 2026-05-11 |
+| 6 | Viewer Experience | Context ◆ | game_status SSE event, POST /api/game/start demand gate, prediction widget, Redis last result |
 
 ## Performance Metrics
 
@@ -76,6 +76,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 4 human UAT in progress — 2026-05-09 (live game testing, bug fixes applied, Rich logging added)
-**Next action:** `/gsd-verify-work 4` to formally close Phase 4, then `/gsd-discuss-phase 5` (Frontend Wiring)
-**Resumption note:** Stack: `docker compose up -d redis` + `cd backend && uv run uvicorn app.main:app --reload`. Phase 4 code is complete (5/5 plans executed). Several LLM bugs fixed this session: gpt-5-nano temperature, grok timeout, DeepSeek empty response, Gemini call→check normalization.
+**Last action:** Phase 6 context gathered — 2026-05-12
+**Next action:** `/gsd-plan-phase 6` (Viewer Experience)
+**Resumption note:** Stack: `docker compose up -d redis` + `cd backend && uv run uvicorn app.main:app --reload` + `cd frontend && npm run dev`. Phase 5 complete (3/3 plans, 7/8 UAT passed, 1 gap fixed). Phase 6 context captured in `.planning/phases/06-viewer-experience/06-CONTEXT.md` — key decisions: game_status SSE event for idle detection, asyncio.Event demand gate with POST /api/game/start, per-hand prediction widget (floating overlay), Redis game:last_result for shared last winner.
