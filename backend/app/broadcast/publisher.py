@@ -33,8 +33,9 @@ async def publish(redis_client: redis.Redis, state: GameState) -> None:
         state: Current GameState — serialized with by_alias=True for camelCase field names
     """
     payload = state.model_dump_json(by_alias=True)  # camelCase JSON matching types.ts
-    # Clear reasoning snapshot on each phase transition — new phase, fresh accumulation.
-    await redis_client.delete(REASONING_SNAPSHOT_KEY)
+    # Clear reasoning snapshot only at hand start — late joiners can recover mid-hand reasoning.
+    if state.phase == "pre-flop":
+        await redis_client.delete(REASONING_SNAPSHOT_KEY)
     # SET before PUBLISH: late joiner arriving between these two ops sees the snapshot
     await redis_client.set(SNAPSHOT_KEY, payload, ex=SNAPSHOT_TTL)
     await redis_client.publish(CHANNEL, payload)

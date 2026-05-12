@@ -55,6 +55,7 @@ See: .planning/PROJECT.md
 |------|-------|------|
 | [2026-05-10-configurable-hands-per-session.md](./todos/pending/2026-05-10-configurable-hands-per-session.md) | Configurable number of hands per session | backend |
 | [2026-05-10-optional-archetypes-mode.md](./todos/pending/2026-05-10-optional-archetypes-mode.md) | Optional archetypes mode for sessions | backend |
+| [2026-05-11-frozen-screen-on-disconnect.md](./todos/pending/2026-05-11-frozen-screen-on-disconnect.md) | Frozen game screen when server dies or connection is severed | frontend |
 
 ### Active Blockers
 None — initialization complete.
