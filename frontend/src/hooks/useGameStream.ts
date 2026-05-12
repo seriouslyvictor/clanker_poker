@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { GameState, ReasoningEntry } from '../components/types'
+import type { GameState, ReasoningEntry, GameStatus } from '../components/types'
 
 export type ConnectionState = 'connecting' | 'open' | 'closed'
 
@@ -7,6 +7,8 @@ export interface GameStream {
   gameState: GameState | null
   reasoning: ReasoningEntry[]
   connectionState: ConnectionState
+  gameRunning: boolean | null   // null = unknown (connecting — no game_status received yet)
+  lastWinner: { name: string; org: string; hand: string } | null
 }
 
 interface ReasoningDelta {
@@ -50,6 +52,8 @@ export function useGameStream(): GameStream {
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [reasoning, setReasoning] = useState<ReasoningEntry[]>([])
   const [connectionState, setConnectionState] = useState<ConnectionState>('connecting')
+  const [gameRunning, setGameRunning] = useState<boolean | null>(null)
+  const [lastWinner, setLastWinner] = useState<{ name: string; org: string; hand: string } | null>(null)
   const prevWinnerRef = useRef<number | null | undefined>(undefined)
 
   useEffect(() => {
@@ -103,6 +107,18 @@ export function useGameStream(): GameStream {
       }
     })
 
+    es.addEventListener('game_status', (e: MessageEvent) => {
+      try {
+        const status: GameStatus = JSON.parse(e.data as string)
+        setGameRunning(status.running)
+        if (!status.running && status.lastWinner !== undefined) {
+          setLastWinner(status.lastWinner ?? null)
+        }
+      } catch (err) {
+        console.error('[useGameStream] Failed to parse game_status event:', err)
+      }
+    })
+
     es.onerror = () => {
       setConnectionState('connecting')
       // DO NOT call es.close() — native EventSource auto-reconnects on error.
@@ -115,5 +131,5 @@ export function useGameStream(): GameStream {
     }
   }, [])
 
-  return { gameState, reasoning, connectionState }
+  return { gameState, reasoning, connectionState, gameRunning, lastWinner }
 }

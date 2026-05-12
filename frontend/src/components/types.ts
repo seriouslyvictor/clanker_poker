@@ -40,6 +40,11 @@ export interface GameState {
   currentBet?: number;
 }
 
+export interface GameStatus {
+  running: boolean;
+  lastWinner?: { name: string; org: string; hand: string } | null;
+}
+
 export interface Settings {
   tempo: TempoMode;
   voice: VoiceMode;
