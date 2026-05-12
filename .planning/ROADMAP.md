@@ -142,6 +142,12 @@ Scope expanded from original roadmap: Next.js is replaced by Vite React SPA (all
 **Goal**: Viewers land on an idle screen when no game is running, can start a game themselves, and can stake their prediction on who wins before showdown.
 **Depends on**: Phase 5 (live game state in UI), Phase 3 (viewer presence tracking)
 **Requirements**: VIEWER-01, VIEWER-02, VIEWER-03
+**Plans:** 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Backend demand gate: broker.viewer_count + publish_game_status + game_loop asyncio.Event + POST /api/game/start + stream.py game_status snapshot
+- [ ] 06-02-PLAN.md — Frontend routing: GameStatus type + useGameStream extension + IdleScreen.tsx + PokerApp routing (loading / idle / game)
+- [ ] 06-03-PLAN.md — Prediction widget: StakeChip onClick + PredictionWidget.tsx (States A/B/C) + localStorage + Game.tsx wiring
 
 **Success Criteria** (what must be TRUE):
 1. When no game is running, the app shows an idle screen with project branding, the last game result (if any), and a "Start a Game" call-to-action button — not a blank page or error state
@@ -165,4 +171,4 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 | 3. SSE Broadcast | 5/5 | Complete | 2026-05-06 |
 | 4. LLM Integration | 0/5 | Not started | - |
 | 5. Frontend Wiring | 3/3 | Human UAT | - |
-| 6. Viewer Experience | 0/? | Not started | - |
+| 6. Viewer Experience | 0/3 | Not started | - |
