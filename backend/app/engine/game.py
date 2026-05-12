@@ -183,6 +183,9 @@ async def run_betting_round(
     )
     # Sync current_bet to GameState so DecisionFn can reconstruct valid actions (D-03)
     game_state.current_bet = betting_state.current_bet
+    # Pot at round start — used to compute live display pot during per-action broadcasts.
+    # Restored before _collect_bets_to_pot so final collection is not double-counted.
+    _pot_at_round_start = game_state.pot
     # has_acted starts empty — neither SB nor BB are added during blind posting
 
     # Determine first actor
@@ -262,9 +265,13 @@ async def run_betting_round(
         game_state.players = players
         # Sync current_bet after raise may have updated it (D-03)
         game_state.current_bet = betting_state.current_bet
-        # Broadcast after each individual player action within a betting round (D-03)
+        # Broadcast after each individual player action within a betting round (D-03).
+        # Show live pot (round-start pot + all current bets) so reconnect snapshots are accurate.
+        # Restored to _pot_at_round_start immediately after so _collect_bets_to_pot is not double-counted.
+        game_state.pot = _pot_at_round_start + sum(p.bet for p in players)
         if broadcast_fn is not None:
             await broadcast_fn(game_state)
+        game_state.pot = _pot_at_round_start
 
         # Early termination — only one player left
         if _active_count(players) == 1:

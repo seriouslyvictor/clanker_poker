@@ -58,9 +58,10 @@ blocked: 0
 ## Gaps
 
 - truth: "After reconnect, game resumes from current state with no state inconsistencies"
-  status: failed
+  status: fixed
   reason: "User reported: pot reset to initial value on reconnect, but chips, play order, and other state were consistent."
   severity: major
   test: 6
-  artifacts: []
-  missing: []
+  root_cause: "game.py run_betting_round only updates game_state.pot via _collect_bets_to_pot at round end. Per-action broadcasts fired with stale round-start pot (0 at pre-flop start). Redis snapshot captured mid-round showed pot=0."
+  fix: "Track _pot_at_round_start before betting loop. Compute live pot = _pot_at_round_start + sum(p.bet) before each broadcast, restore to _pot_at_round_start after so _collect_bets_to_pot is not double-counted."
+  artifacts: [backend/app/engine/game.py]
