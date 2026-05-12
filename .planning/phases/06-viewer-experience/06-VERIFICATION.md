@@ -1,21 +1,16 @@
 ---
 phase: 06-viewer-experience
-verified: 2026-05-12T15:00:00Z
-status: gaps_found
-score: 11/12 must-haves verified
+verified: 2026-05-12T16:00:00Z
+status: human_needed
+score: 12/12 must-haves verified
 overrides_applied: 0
-gaps:
-  - truth: "State C (WINNER phase): if prediction was correct, shows ConfettiBurst + GoldCrownChip with 'CORRECT!'; if wrong, shows red StakeChip with 'WRONG'"
-    status: failed
-    reason: "PredictionWidget is unmounted at the WINNER phase because Game.tsx's PREDICTION_PHASES set does not include 'WINNER'. State C code inside PredictionWidget.tsx (line 122: if gameState.phase === 'WINNER') is dead code — it can never execute. The widget disappears when the game enters SHOWDOWN and never returns during the WINNER phase."
-    artifacts:
-      - path: "frontend/src/components/Game.tsx"
-        issue: "PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER']) excludes WINNER phase, so the widget is conditionally unmounted before State C can trigger"
-      - path: "frontend/src/components/PredictionWidget.tsx"
-        issue: "State C guard (gameState.phase === 'WINNER') is unreachable since Game.tsx unmounts the widget before WINNER phase"
-    missing:
-      - "Add 'WINNER' (or 'SHOWDOWN' + 'WINNER') to PREDICTION_PHASES in Game.tsx so the widget remains mounted at result-reveal time"
-      - "Alternatively, move the phase-gate logic inside PredictionWidget.tsx to keep the widget mounted through WINNER phase when a prediction has been made"
+re_verification:
+  previous_status: gaps_found
+  previous_score: 11/12
+  gaps_closed:
+    - "State C (WINNER phase): if prediction was correct, shows ConfettiBurst + GoldCrownChip 'CORRECT!'; if wrong, shows red StakeChip 'WRONG'"
+  gaps_remaining: []
+  regressions: []
 human_verification:
   - test: "Idle screen full cycle — connect with no game running"
     expected: "Browser shows CONNECTING... briefly, transitions to IdleScreen with IA POKER BATTLEGROUND branding, START A GAME button, and cold-start hint (no last-result callout on fresh deploy)"
@@ -26,9 +21,12 @@ human_verification:
   - test: "Idle → game → idle cycle"
     expected: "After a session completes, UI returns to IdleScreen showing last-result callout with winner name, org, and hand (e.g. \"OpenAI's GPT-5 Nano won with Two Pair\")"
     why_human: "Requires completing a full game session with SSE delivering game_status { running: false, lastWinner: {...} }"
-  - test: "Prediction widget State A and State B"
+  - test: "Prediction widget States A and B"
     expected: "During PRE-FLOP/FLOP/TURN/RIVER: widget shows WHO WINS THIS HAND? with 4 player chips; clicking a chip collapses widget to PREDICTED: + chosen chip; widget disappears at SHOWDOWN"
     why_human: "Live game state progression required; visual confirmation needed"
+  - test: "Prediction widget State C — result reveal at WINNER phase"
+    expected: "Widget re-appears at WINNER phase (now in PREDICTION_PHASES); if prediction was correct, shows ConfettiBurst + GoldCrownChip CORRECT! + 'You picked {name}'; if wrong, shows red StakeChip WRONG + 'You picked {name}'"
+    why_human: "Requires completing a live hand with a prior prediction made; visual and animation behavior needs human confirmation"
   - test: "503 guard behavior — clicking START A GAME when no SSE clients are connected from backend's view"
     expected: "Frontend does not crash on 503; button resets to START A GAME (isStarting false) after error"
     why_human: "Error path behavior in browser required"
@@ -36,10 +34,26 @@ human_verification:
 
 # Phase 6: Viewer Experience — Verification Report
 
-**Phase Goal:** Viewers always see a meaningful screen (idle or game). Demand gate prevents game running without a viewer. Anonymous prediction widget gives active engagement.
-**Verified:** 2026-05-12T15:00:00Z
-**Status:** gaps_found
-**Re-verification:** No — initial verification
+**Phase Goal:** Viewers always see a meaningful screen (idle or game). Demand gate prevents game running without a viewer. Anonymous prediction widget gives active engagement including result reveal.
+**Verified:** 2026-05-12T16:00:00Z
+**Status:** human_needed
+**Re-verification:** Yes — after gap closure (PREDICTION_PHASES fix in Game.tsx)
+
+---
+
+## Re-verification Summary
+
+**Gap closed:** `PREDICTION_PHASES` in `frontend/src/components/Game.tsx` line 25 now reads:
+
+```typescript
+const PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER', 'WINNER'])
+```
+
+`'WINNER'` was added, making the PredictionWidget mount at the WINNER phase and allowing State C (result reveal) to execute.
+
+**Score movement:** 11/12 → 12/12. All must-have truths now verified.
+
+**Regressions:** None. No other files were modified by the fix.
 
 ---
 
@@ -75,15 +89,15 @@ All must-haves are derived from the merged set of ROADMAP success criteria and P
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
 | 12 | PredictionWidget renders as floating overlay (bottom-right) during PRE-FLOP, FLOP, TURN, RIVER | VERIFIED | `Game.tsx` line 173: `PREDICTION_PHASES.has(gameState.phase) && <PredictionWidget ...>`; `PredictionWidget.tsx` panelStyle: `position:'absolute', bottom:16, right:16, zIndex:30` |
-| 13 | PredictionWidget is not mounted during DEALING, SHOWDOWN, or WINNER phases | VERIFIED | `Game.tsx` line 25: `PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER'])` — DEALING/SHOWDOWN/WINNER all excluded |
+| 13 | PredictionWidget is not mounted during DEALING or SHOWDOWN phases | VERIFIED | `Game.tsx` line 25: `PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER', 'WINNER'])` — DEALING and SHOWDOWN excluded; WINNER now included to enable State C |
 | 14 | State A: four player chips show — clicking one stores prediction in localStorage and collapses to State B | VERIFIED | `PredictionWidget.tsx` lines 71-79: `handlePick` stores via `savePrediction(record)` (localStorage.setItem); State A renders chips with `onClick={() => handlePick(player.id)}` |
 | 15 | State B: shows 'PREDICTED:' + the chosen player chip — no further interaction | VERIFIED | `PredictionWidget.tsx` lines 141-153: `if (prediction !== null && pickedPlayer !== null)` returns div with `PREDICTED:` header and StakeChip |
-| **16** | **State C (WINNER phase): if prediction was correct, shows ConfettiBurst + GoldCrownChip 'CORRECT!'; if wrong, shows red StakeChip 'WRONG'** | **FAILED** | `PredictionWidget.tsx` lines 121-139: State C guard `gameState.phase === 'WINNER'` is dead code — `Game.tsx` unmounts PredictionWidget at WINNER phase (WINNER not in PREDICTION_PHASES). State C is never reached. |
+| 16 | State C (WINNER phase): if prediction was correct, shows ConfettiBurst + GoldCrownChip 'CORRECT!'; if wrong, shows red StakeChip 'WRONG' | VERIFIED | `Game.tsx` line 25: `'WINNER'` now in `PREDICTION_PHASES` — widget is mounted at WINNER phase. `PredictionWidget.tsx` lines 53-69: `useEffect` sets `result: 'correct'\|'wrong'` when `gameState.phase === 'WINNER'`. Lines 121-138: State C guard `gameState.phase === 'WINNER' && prediction?.result !== null` renders ConfettiBurst+GoldCrownChip or red StakeChip. Data flow is now live. |
 | 17 | localStorage key 'poker_prediction' holds { handId, prediction, result } | VERIFIED | `PredictionWidget.tsx` line 19: `PREDICTION_KEY = 'poker_prediction'`; `PredictionRecord` interface lines 13-17; `savePrediction` writes JSON |
 | 18 | Prediction resets for each new hand (winner null-transition detection) | VERIFIED | `PredictionWidget.tsx` lines 40-50: `useEffect` on `gameState.winner`: if prev non-null and current null → `setPrediction(null)` + `localStorage.removeItem(PREDICTION_KEY)` |
 | 19 | slideIn animation plays on widget mount | VERIFIED | `PredictionWidget.tsx` line 97: `animation: 'slideIn 0.25s ease-out both'` in panelStyle |
 
-**Score: 11/12 truths verified** (Truth 16 FAILED — State C unreachable)
+**Score: 12/12 truths verified**
 
 ---
 
@@ -93,7 +107,7 @@ All must-haves are derived from the merged set of ROADMAP success criteria and P
 |----|------|--------|-------|
 | SC-1 | Idle screen with branding, last game result, Start CTA — not blank | VERIFIED | IdleScreen.tsx implements all three elements; PokerApp routes correctly |
 | SC-2 | Clicking Start causes game within 5s; button disabled immediately; no double-start | VERIFIED (partial human) | Backend 409 guard + client isStarting disable verified in code; 5s timing requires human |
-| SC-3 | Viewer selects AI they predict will win; prediction UI disappears after pick; result shown at showdown | FAILED | State A (pick) and State B (disappears) verified; State C result at showdown is broken — widget unmounted before WINNER phase |
+| SC-3 | Viewer selects AI they predict will win; prediction UI disappears after pick; result shown at showdown | VERIFIED (human needed) | State A (pick), State B (collapse), State C (result reveal) all reachable now that WINNER is in PREDICTION_PHASES. End-to-end behavior requires human confirmation with a live game |
 | SC-4 | Idle → game → idle cycle: after showdown UI returns to idle showing last result | VERIFIED (human needed) | Backend writes `game:last_result`, SSE delivers `game_status { running: false, lastWinner }`, PokerApp routes back to IdleScreen; end-to-end timing requires human |
 
 ---
@@ -112,9 +126,9 @@ All must-haves are derived from the merged set of ROADMAP success criteria and P
 | `frontend/src/hooks/useGameStream.ts` | gameRunning and lastWinner state from game_status events | VERIFIED | Lines 10-11: interface fields; lines 55-56: useState; lines 110-120: addEventListener |
 | `frontend/src/components/IdleScreen.tsx` | IdleScreen with branding, last-result, Start button | VERIFIED | Full implementation present; all required text elements confirmed |
 | `frontend/src/components/PokerApp.tsx` | Routing on gameRunning tri-state | VERIFIED | Lines 35-57: null→CONNECTING, false→IdleScreen, true→Game |
-| `frontend/src/components/PredictionWidget.tsx` | Floating overlay States A/B/C with localStorage | VERIFIED (partially) | States A and B fully implemented; State C code exists but is unreachable |
+| `frontend/src/components/PredictionWidget.tsx` | Floating overlay States A/B/C with localStorage | VERIFIED | All three states reachable — WINNER added to PREDICTION_PHASES in Game.tsx closes the gap |
 | `frontend/src/components/StakeChip.tsx` | onClick prop extension | VERIFIED | Lines 7: `onClick?: () => void`; line 29: `cursor: onClick ? 'pointer' : 'default'` |
-| `frontend/src/components/Game.tsx` | PredictionWidget rendered inside game layout | VERIFIED | Line 10: import; line 25: PREDICTION_PHASES Set; lines 173-177: conditional render |
+| `frontend/src/components/Game.tsx` | PredictionWidget rendered inside game layout, WINNER in PREDICTION_PHASES | VERIFIED | Line 25: `new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER', 'WINNER'])`; line 10: import; lines 173-177: conditional render |
 
 ---
 
@@ -128,9 +142,9 @@ All must-haves are derived from the merged set of ROADMAP success criteria and P
 | `frontend/src/hooks/useGameStream.ts` | `frontend/src/components/PokerApp.tsx` | gameRunning and lastWinner returned | WIRED | Line 14: destructure; line 134: return includes both |
 | `frontend/src/components/PokerApp.tsx` | `frontend/src/components/IdleScreen.tsx` | `<IdleScreen theme={theme} lastWinner={lastWinner} onStart={handleStart} />` | WIRED | Line 56 |
 | `frontend/src/components/IdleScreen.tsx` | POST /api/game/start | `await onStart()` in handleStart | WIRED | PokerApp.tsx handleStart (lines 20-30) fetches `/api/game/start`; IdleScreen calls `await onStart()` (line 16) |
-| `frontend/src/components/Game.tsx` | `frontend/src/components/PredictionWidget.tsx` | `PREDICTION_PHASES.has(gameState.phase)` | WIRED (incomplete) | Mount gate verified; but WINNER excluded causing State C to be unreachable |
+| `frontend/src/components/Game.tsx` | `frontend/src/components/PredictionWidget.tsx` | `PREDICTION_PHASES.has(gameState.phase)` including WINNER | WIRED | Mount gate includes WINNER phase; widget mounted when State C must execute |
 | `frontend/src/components/PredictionWidget.tsx` | localStorage | `localStorage.setItem('poker_prediction', ...)` | WIRED | `savePrediction` function (line 30-32) and `localStorage.removeItem` (line 47) |
-| `frontend/src/components/PredictionWidget.tsx` | `frontend/src/components/GoldCrownChip.tsx` | `<GoldCrownChip size='md' label='CORRECT!' />` | WIRED (unreachable) | Line 128: GoldCrownChip used in State C — imported and called correctly, but State C is never reached |
+| `frontend/src/components/PredictionWidget.tsx` | `frontend/src/components/GoldCrownChip.tsx` | `<GoldCrownChip size='md' label='CORRECT!' />` | WIRED | Line 128: GoldCrownChip used in State C — imported and called correctly; State C now reachable |
 
 ---
 
@@ -141,7 +155,7 @@ All must-haves are derived from the merged set of ROADMAP success criteria and P
 | `IdleScreen.tsx` | `lastWinner` | `useGameStream` → `game_status` SSE event → Redis `game:last_result` | Yes — `game_loop.py` writes real session winner after each session | FLOWING |
 | `PokerApp.tsx` | `gameRunning` | `useGameStream` → `game_status` SSE event → `app.state.game_running` | Yes — set by game_loop.py before/after sessions | FLOWING |
 | `PredictionWidget.tsx` | `gameState.phase`, `gameState.winner`, `gameState.players` | `useGameStream` → `game_state` SSE event → Redis `game:state:last` | Yes — live game state from real session | FLOWING |
-| `PredictionWidget.tsx` | State C result | `gameState.phase === 'WINNER'` | N/A — condition never true when widget is mounted | DISCONNECTED (structural) |
+| `PredictionWidget.tsx` | State C result (`prediction.result`) | `gameState.phase === 'WINNER'` useEffect sets result from `gameState.winner` index | Yes — winner index from live game state; result set to 'correct' or 'wrong' by comparison | FLOWING |
 
 ---
 
@@ -157,15 +171,17 @@ Step 7b: SKIPPED — verification requires a running FastAPI server + Redis. Sta
 |-------------|-------------|-------------|--------|----------|
 | VIEWER-01 | 06-01, 06-02 | Idle screen with branding, last game result, Start CTA | SATISFIED | IdleScreen.tsx implements all elements; PokerApp routes correctly |
 | VIEWER-02 | 06-01, 06-02 | Any viewer can start a game; demand gate enforced server-side | SATISFIED | POST /api/game/start with 409/503 guards; asyncio.Event demand gate; START A GAME button |
-| VIEWER-03 | 06-03 | Anonymous prediction before showdown; result shown at showdown | PARTIALLY SATISFIED | Pick and display (States A+B) implemented and working; result reveal (State C) is broken — widget unmounted before WINNER phase |
+| VIEWER-03 | 06-03 | Anonymous prediction before showdown; result shown at showdown | SATISFIED | States A (pick), B (display), and C (result reveal) all implemented and reachable. WINNER phase is now in PREDICTION_PHASES — widget is mounted when State C executes. Human testing needed to confirm visual output. |
 
 ---
 
 ### Anti-Patterns Found
 
+No blockers. The previously identified blocker (dead `gameState.phase === 'WINNER'` guard in PredictionWidget.tsx) is resolved — the guard is now reachable because Game.tsx mounts the widget during WINNER phase.
+
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| `frontend/src/components/PredictionWidget.tsx` | 122 | `if (gameState.phase === 'WINNER' && ...)` — dead code path | Blocker | State C result reveal (CORRECT!/WRONG) can never execute; the component is unmounted before WINNER phase |
+| — | — | None found | — | — |
 
 ---
 
@@ -173,56 +189,52 @@ Step 7b: SKIPPED — verification requires a running FastAPI server + Redis. Sta
 
 #### 1. Idle Screen Visual Transition
 
-**Test:** Open browser to `http://localhost:5173` with backend not running a game  
-**Expected:** Briefly shows `CONNECTING...` text centered on the table background, then transitions to IdleScreen with "IA POKER BATTLEGROUND" title, "Be the first viewer to start a game" hint, and orange START A GAME button  
+**Test:** Open browser to `http://localhost:5173` with backend not running a game
+**Expected:** Briefly shows `CONNECTING...` text centered on the table background, then transitions to IdleScreen with "IA POKER BATTLEGROUND" title, "Be the first viewer to start a game" hint, and orange START A GAME button
 **Why human:** Visual appearance and SSE event timing cannot be verified without a live server + browser
 
 #### 2. Start Game Button Behavior
 
-**Test:** Click START A GAME with backend and Redis running (at least one SSE viewer connected)  
-**Expected:** Button immediately shows `STARTING...` and is disabled. Within 5 seconds, UI transitions from IdleScreen to Game view showing a live hand  
+**Test:** Click START A GAME with backend and Redis running (at least one SSE viewer connected)
+**Expected:** Button immediately shows `STARTING...` and is disabled. Within 5 seconds, UI transitions from IdleScreen to Game view showing a live hand
 **Why human:** Real-time SSE-triggered UI transition requires live server interaction; 5-second timing cannot be measured statically
 
 #### 3. Idle → Game → Idle Full Cycle
 
-**Test:** Start a game, let it complete all 10 hands  
-**Expected:** After session ends, UI automatically returns to IdleScreen showing the last-result callout: "{org}'s {name} won with {hand}"  
+**Test:** Start a game, let it complete all 10 hands
+**Expected:** After session ends, UI automatically returns to IdleScreen showing the last-result callout: "{org}'s {name} won with {hand}"
 **Why human:** Requires completing a full game session (~several minutes) with SSE delivering `game_status { running: false, lastWinner: {...} }`
 
 #### 4. Prediction Widget States A and B
 
-**Test:** During PRE-FLOP phase, observe bottom-right corner; click a player chip  
-**Expected:** Widget shows "WHO WINS THIS HAND?" with 4 player chips. After click, collapses to "PREDICTED:" with single chip. Widget disappears when game reaches SHOWDOWN phase  
+**Test:** During PRE-FLOP phase, observe bottom-right corner; click a player chip
+**Expected:** Widget shows "WHO WINS THIS HAND?" with 4 player chips. After click, collapses to "PREDICTED:" with single chip. Widget disappears when game reaches SHOWDOWN phase
 **Why human:** Visual and interactive behavior requires live game state progression
 
-#### 5. 503 Error Handling
+#### 5. Prediction Widget State C — Result Reveal
 
-**Test:** Click START A GAME before any SSE client has subscribed (no viewer count)  
-**Expected:** Backend returns 503; IdleScreen button resets to `START A GAME` (isStarting reverts to false); no crash  
+**Test:** During PRE-FLOP/FLOP/TURN/RIVER, pick a player. Let the hand play out to WINNER phase.
+**Expected:** Widget re-appears at WINNER phase showing either: (a) ConfettiBurst + gold "CORRECT!" chip + "You picked {name}" if the predicted player won, or (b) red "WRONG" chip + "You picked {name}" if they lost.
+**Why human:** Requires a live hand with a prior prediction. State C result computation happens via useEffect in the browser — visual and animation output needs human eyes. This is the key closed gap.
+
+#### 6. 503 Error Handling
+
+**Test:** Click START A GAME before any SSE client has subscribed (no viewer count)
+**Expected:** Backend returns 503; IdleScreen button resets to `START A GAME` (isStarting reverts to false); no crash
 **Why human:** Error path requires network inspection and visual confirmation
 
 ---
 
 ### Gaps Summary
 
-**1 gap blocking full goal achievement:**
+No gaps remain. The single previously identified gap is closed:
 
-**State C (prediction result reveal) is broken.** The root cause is a conflict between the PREDICTION_PHASES gate in Game.tsx and the State C trigger in PredictionWidget.tsx:
+**Gap closed:** State C (prediction result reveal) was unreachable because `'WINNER'` was absent from `PREDICTION_PHASES` in Game.tsx. The fix — adding `'WINNER'` to the Set on line 25 — means the widget is now mounted during WINNER phase. The `useEffect` that computes the result (`correct`/`wrong`) fires when `gameState.phase === 'WINNER'`, and the State C render branch at PredictionWidget.tsx line 122 is now reachable code.
 
-- Game.tsx mounts PredictionWidget only when `phase ∈ {PRE-FLOP, FLOP, TURN, RIVER}`
-- PredictionWidget's State C fires when `phase === 'WINNER'`
-- Since `'WINNER' ∉ PREDICTION_PHASES`, the widget is always unmounted before State C can execute
-
-**Impact on requirements:** VIEWER-03 is partially satisfied — viewers can make predictions (State A), their choice is displayed (State B), but the correct/wrong result reveal at showdown (State C, the payoff moment of the feature) never shows.
-
-**Fix options:**
-1. Add `'WINNER'` to `PREDICTION_PHASES` in Game.tsx (simplest — widget stays mounted at showdown)
-2. Add `'SHOWDOWN'` and `'WINNER'` to PREDICTION_PHASES — allows the useEffect result-setting to run during SHOWDOWN phase before WINNER phase display
-3. Move phase-gating inside PredictionWidget with logic: mount always during game, but only show prediction UI during prediction phases; show result during WINNER
-
-The simplest fix is option 1: change `PREDICTION_PHASES` in `Game.tsx` from `new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER'])` to `new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER', 'WINNER'])`. This is a one-line change.
+All 12 must-have truths are verified in static analysis. The phase is ready for human verification of visual and real-time behaviors.
 
 ---
 
-_Verified: 2026-05-12T15:00:00Z_
+_Verified: 2026-05-12T16:00:00Z_
 _Verifier: Claude (gsd-verifier)_
+_Re-verification after gap fix: PREDICTION_PHASES 'WINNER' addition in Game.tsx_
