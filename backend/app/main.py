@@ -6,6 +6,7 @@ import redis.asyncio as redis_asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.game import router as game_router
 from app.api.health import router as health_router
 from app.api.stream import router as stream_router
 from app.broadcast.broker import EventBroker
@@ -49,6 +50,10 @@ async def lifespan(app: FastAPI):
     # 3. Fan-out broker
     app.state.broker = EventBroker()
 
+    # 3b. Demand gate — MUST be created inside lifespan to bind to uvicorn event loop (Pitfall 1)
+    app.state.start_event = asyncio.Event()
+    app.state.game_running = False
+
     # 4. Background: Redis subscriber → fan-out to client queues (both game:state + game:reasoning)
     app.state.subscriber_task = asyncio.create_task(
         app.state.broker.run_subscriber(
@@ -56,9 +61,15 @@ async def lifespan(app: FastAPI):
         )
     )
 
-    # 5. Background: continuous game loop (Phase 3 placeholder — Phase 6 adds viewer trigger)
+    # 5. Background: demand-gated game loop (Phase 6 — waits on start_event before each session)
     app.state.loop_task = asyncio.create_task(
-        run_game_loop(app.state.redis_client, settings)
+        run_game_loop(
+            app.state.redis_client,
+            settings,
+            app.state.broker,
+            app.state.start_event,
+            app.state,
+        )
     )
 
     yield
@@ -90,3 +101,4 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(stream_router)
+app.include_router(game_router)

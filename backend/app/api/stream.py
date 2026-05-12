@@ -21,7 +21,7 @@ from collections.abc import AsyncIterable
 from fastapi import APIRouter, Request
 from fastapi.sse import EventSourceResponse, ServerSentEvent
 
-from app.broadcast.publisher import SNAPSHOT_KEY, REASONING_SNAPSHOT_KEY
+from app.broadcast.publisher import SNAPSHOT_KEY, REASONING_SNAPSHOT_KEY, GAME_LAST_RESULT_KEY
 
 router = APIRouter()
 
@@ -70,6 +70,33 @@ async def sse_stream(request: Request) -> AsyncIterable[ServerSentEvent]:
                 id=str(broker.next_id()),
                 retry=3000,
             )
+
+        # Send game_status snapshot — LAST in snapshot sequence so frontend routing has full context.
+        # getattr default False: if game never started, game_running is not set yet.
+        game_running: bool = getattr(request.app.state, "game_running", False)
+        last_result_raw = await redis_client.get(GAME_LAST_RESULT_KEY)
+        if game_running:
+            status_payload = json.dumps({"running": True})
+        else:
+            last_winner = None
+            if last_result_raw:
+                data = json.loads(
+                    last_result_raw.decode("utf-8") if isinstance(last_result_raw, bytes)
+                    else last_result_raw
+                )
+                last_winner = {
+                    "name": data["winnerName"],
+                    "org": data["winnerOrg"],
+                    "hand": data["winnerHand"],
+                }
+            status_payload = json.dumps({"running": False, "lastWinner": last_winner})
+
+        yield ServerSentEvent(
+            raw_data=status_payload,
+            event="game_status",
+            id=str(broker.next_id()),
+            retry=3000,
+        )
 
         # Step 3: Drain live events; check disconnect on each iteration
         while True:

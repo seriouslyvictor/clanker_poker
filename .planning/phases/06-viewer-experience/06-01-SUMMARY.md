@@ -1,0 +1,142 @@
+---
+phase: 06-viewer-experience
+plan: "01"
+subsystem: api
+tags: [fastapi, sse, asyncio, redis, game-status, demand-gate]
+
+# Dependency graph
+requires:
+  - phase: 03-sse-broadcast
+    provides: EventBroker fan-out, publisher.py, stream.py snapshot model
+  - phase: 04-llm-integration
+    provides: game_loop.py pattern, BudgetTracker, CircuitBreaker
+  - phase: 05-frontend-wiring
+    provides: SSE hook consumer, frontend routing context
+
+provides:
+  - broker.viewer_count property (count of active SSE client queues)
+  - publisher.GAME_LAST_RESULT_KEY constant + publish_game_status() function
+  - POST /api/game/start endpoint with 409/503/200 guards
+  - Demand-gated game_loop.py using asyncio.Event (no auto-loop)
+  - app.state.start_event + app.state.game_running wired in lifespan
+  - game_status SSE event as last item in snapshot sequence on every connect
+
+affects: [06-02-frontend-idle-screen, 06-03-prediction-widget, future-phases]
+
+# Tech tracking
+tech-stack:
+  added: []
+  patterns:
+    - asyncio.Event demand gate — game loop suspends until POST /api/game/start fires the event
+    - game_status broadcast via broker.broadcast() directly (not Redis pub/sub) — local process only
+    - TYPE_CHECKING guard for EventBroker import in publisher.py (circular import prevention)
+    - app.state shared state for game_running flag + start_event (single event loop, no locks needed)
+    - game_status snapshot last in sequence — frontend has full routing context before live events
+
+key-files:
+  created:
+    - backend/app/api/game.py
+  modified:
+    - backend/app/broadcast/broker.py
+    - backend/app/broadcast/publisher.py
+    - backend/app/game_loop.py
+    - backend/app/main.py
+    - backend/app/api/stream.py
+
+key-decisions:
+  - "game_status broadcast uses broker.broadcast() directly — not Redis pub/sub — game_status is always local-process-generated (no cross-process fan-out needed, avoids third Redis channel)"
+  - "app_state.game_running = True SET BEFORE publish_game_status(running=True) — prevents race where a second POST /api/game/start arrives before the flag is set"
+  - "asyncio.Event created inside lifespan to bind to uvicorn event loop (Pitfall 1 prevention)"
+  - "getattr(request.app.state, 'game_running', False) in stream.py — safe default if game never started"
+
+patterns-established:
+  - "Demand gate pattern: asyncio.Event.wait() in game loop + start_event.set() in endpoint"
+  - "game_status last in SSE snapshot sequence — ensures frontend has complete state context on connect"
+  - "game:last_result Redis key written after each session with ex=SNAPSHOT_TTL"
+
+requirements-completed: [VIEWER-01, VIEWER-02]
+
+# Metrics
+duration: 4min
+completed: 2026-05-12
+---
+
+# Phase 6 Plan 01: Demand Gate + game_status SSE Summary
+
+**Demand-gated backend with asyncio.Event gate, POST /api/game/start endpoint (409/503/200 guards), game_status SSE event on connect and session transitions, and Redis game:last_result persistence**
+
+## Performance
+
+- **Duration:** 4 min
+- **Started:** 2026-05-12T13:42:49Z
+- **Completed:** 2026-05-12T13:47:00Z
+- **Tasks:** 2
+- **Files modified:** 6 (5 modified, 1 created)
+
+## Accomplishments
+
+- Game loop is now demand-gated: suspends on `asyncio.Event.wait()` after each session, no auto-loop
+- POST /api/game/start endpoint enforces two guards: 409 if game already running, 503 if no viewers connected
+- `game_status` SSE event sent as last item in snapshot sequence on every client connect/reconnect
+- `broker.viewer_count` property exposes active queue count for demand-gate enforcement
+- `game:last_result` Redis key written after each session with winner name, org, and hand
+
+## Task Commits
+
+Each task was committed atomically:
+
+1. **Task 1: broker.viewer_count + publisher.publish_game_status + GAME_LAST_RESULT_KEY** - `bb0a343` (feat)
+2. **Task 2: game_loop demand gate + api/game.py + main.py wiring + stream.py snapshot** - `88c2eec` (feat)
+
+## Files Created/Modified
+
+- `backend/app/broadcast/broker.py` - Added `viewer_count` property (len of `_queues`, lock-free)
+- `backend/app/broadcast/publisher.py` - Added `GAME_LAST_RESULT_KEY` constant and `publish_game_status()` function; TYPE_CHECKING guard for circular import
+- `backend/app/game_loop.py` - Full refactor to demand-gated loop; writes game:last_result to Redis; broadcasts game_status on session start/end
+- `backend/app/api/game.py` - New file: POST /api/game/start with 409/503/200 response guards
+- `backend/app/main.py` - Added `app.state.start_event` and `app.state.game_running` in lifespan; updated `run_game_loop` call signature; included `game_router`
+- `backend/app/api/stream.py` - Added game_status snapshot block (last in sequence) reading `app.state.game_running` + `game:last_result` from Redis
+
+## Decisions Made
+
+- `publish_game_status()` broadcasts via `broker.broadcast()` directly, not Redis pub/sub — game_status is always generated by the local process so there is no need for a third Redis channel
+- `app_state.game_running = True` is set before `publish_game_status(running=True)` to prevent a race where a second POST /api/game/start arrives in the narrow window before the flag is set (T-06-05 mitigation)
+- `asyncio.Event()` created inside the lifespan context manager to ensure it binds to the uvicorn event loop, not an import-time loop
+
+## Deviations from Plan
+
+None — plan executed exactly as written.
+
+## Issues Encountered
+
+- Python venv for the worktree did not exist on first `uv run` — automatically created by uv with no intervention needed
+- Windows CP1252 encoding caused initial acceptance-check script to fail when reading files with em-dash characters — switched to `encoding='utf-8'` in pathlib.Path.read_text()
+
+## User Setup Required
+
+None — no external service configuration required. Backend uses existing Redis connection.
+
+## Next Phase Readiness
+
+- Backend demand gate is fully wired: POST /api/game/start is registered, game_status flows through SSE, game:last_result persists in Redis
+- Frontend can now implement the idle screen (Plan 06-02): consume `game_status` event in `useGameStream`, add `gameRunning` state, route to `<IdleScreen>` or `<Game>` in `PokerApp.tsx`
+- No blockers
+
+## Self-Check
+
+Verifying committed files exist and hashes are valid:
+
+- `backend/app/broadcast/broker.py` — modified in bb0a343
+- `backend/app/broadcast/publisher.py` — modified in bb0a343
+- `backend/app/game_loop.py` — modified in 88c2eec
+- `backend/app/api/game.py` — created in 88c2eec
+- `backend/app/main.py` — modified in 88c2eec
+- `backend/app/api/stream.py` — modified in 88c2eec
+
+## Self-Check: PASSED
+
+All 6 files present in commits bb0a343 and 88c2eec. Import verification passed (viewer_count: 0, GAME_LAST_RESULT_KEY: game:last_result, /api/game/start route registered).
+
+---
+*Phase: 06-viewer-experience*
+*Completed: 2026-05-12*

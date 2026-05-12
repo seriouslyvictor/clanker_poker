@@ -36,6 +36,12 @@ class EventBroker:
         self._message_id += 1
         return self._message_id
 
+    @property
+    def viewer_count(self) -> int:
+        """Return number of currently connected SSE clients (point-in-time snapshot).
+        No lock needed — len() read is safe for demand-gate heuristic (Assumption A2)."""
+        return len(self._queues)
+
     async def subscribe(self) -> asyncio.Queue:
         """
         Register a new client queue and return it.
