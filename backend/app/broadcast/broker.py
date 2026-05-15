@@ -51,6 +51,7 @@ class EventBroker:
         q: asyncio.Queue = asyncio.Queue(maxsize=10)
         async with self._lock:
             self._queues.append(q)
+        logger.info("Viewer connected — active viewers: %d", self.viewer_count)
         return q
 
     async def unsubscribe(self, q: asyncio.Queue) -> None:
@@ -60,6 +61,7 @@ class EventBroker:
                 self._queues.remove(q)
             except ValueError:
                 pass  # already removed (double-disconnect is safe)
+        logger.info("Viewer disconnected — active viewers: %d", self.viewer_count)
 
     async def broadcast(self, data: str) -> None:
         """
