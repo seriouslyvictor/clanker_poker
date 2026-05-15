@@ -1,13 +1,15 @@
 # Project State
 
 ## Current Phase
-Phase 6 — Viewer Experience (3 plans ready to execute)
+
+v0.5 milestone complete — planning next milestone (v1.0)
 
 ## Project Reference
-See: .planning/PROJECT.md
+
+See: .planning/PROJECT.md (updated 2026-05-14)
 
 **Core value:** Spectators watch compelling, human-feeling AI poker with transparent reasoning — system never runs without viewers.
-**Current focus:** Phase 6 — Viewer Experience
+**Current focus:** Planning v1.0 milestone (`/gsd-new-milestone`)
 
 ## Phase Status
 
@@ -20,34 +22,28 @@ See: .planning/PROJECT.md
 | 5 | Frontend Wiring | Complete ✓ | Vite SPA scaffold, CORS + reasoning snapshot, useGameStream hook — 7/8 UAT passed, 1 gap fixed 2026-05-11 |
 | 6 | Viewer Experience | Complete ✓ | 5/6 UAT passed, 1 skipped — human UAT passed 2026-05-14 |
 
-## Performance Metrics
-
-| Metric | Target | Current |
-|--------|--------|---------|
-| Hand evaluation speed | < 100ms | - |
-| LLM decision timeout | 8s global / 2s per call | - |
-| SSE reconnect time | < 3s | - |
-| Game start after button click | < 5s | - |
-| Heartbeat interval | 5s | - |
-
 ## Accumulated Context
 
 ### Key Decisions Made
+
 - Backend: Python (FastAPI) — not Node.js. LiteLLM as unified LLM interface.
-- Architecture: FastAPI game engine (VPS persistent process) → SSE → Next.js frontend (UI only)
+- Architecture: FastAPI game engine (VPS persistent process) → SSE → Vite SPA (UI only)
+- Frontend: Migrated from Next.js to Vite SPA during Phase 5 — all components were pure React
 - LLM role: narration + decision selection only. All math (hand strength, pot odds, equity) computed in code.
-- Game trigger: viewer-initiated ("Start a Game" button) — demand-gated server-side.
+- Game trigger: viewer-initiated ("Start a Game" button) — demand-gated server-side via asyncio.Event.
 - Predictions: localStorage only in v1, no backend persistence.
 - Poker rules: simplified — single main pot, no side pots.
 - LLM calls: sequential per decision phase (not parallel) to start.
-- Python 3.13.13 used (no pin) — treys 0.1.8 pure Python, compatible with 3.13; uv python pin 3.12 not needed.
-- config.py is provider-agnostic: player_models list[str] holds LiteLLM model strings; no per-provider API key fields in Settings.
+- Python 3.13.13 used — treys 0.1.8 pure Python, compatible with 3.13.
+- config.py is provider-agnostic: player_models list[str] holds LiteLLM model strings via models.config.json.
 
 ### Architecture Notes
-- Frontend is already built. Game.tsx renders MOCK_STATE. Phase 5 replaces it.
-- SSE message IDs enable client-side replay on reconnect (Phase 5 client consumes them).
-- Archetype parameters (hand_looseness, raise_freq, bluff_freq, tilt_threshold) drive code-level decision biases — LLM receives archetype description in prompt for narrative voice only.
-- Budget protection: per-game spend tracked, circuit breaker per provider, 8s global deadline.
+
+- FastAPI → Redis pub/sub → EventBroker (per-client asyncio.Queue) → SSE → Vite SPA
+- SSE message IDs enable client-side replay on reconnect via EventSource native behavior.
+- Archetype parameters (hand_looseness, raise_freq, bluff_freq, tilt_threshold) drive code-level decision biases.
+- Budget protection: per-game spend tracked, circuit breaker per provider, 45s global timeout.
+- Late-joiner snapshot served from Redis SNAPSHOT_KEY on first connect.
 
 ### Pending Todos
 
@@ -57,9 +53,11 @@ See: .planning/PROJECT.md
 | [2026-05-10-optional-archetypes-mode.md](./todos/pending/2026-05-10-optional-archetypes-mode.md) | Optional archetypes mode for sessions | backend |
 
 ### Active Blockers
-None — initialization complete.
 
-### Deferred Items (v2)
+None.
+
+### Deferred Items (v1.0+)
+
 - Live viewer count display
 - Scheduled game intervals
 - Prediction streak tracking
@@ -76,6 +74,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 6 human UAT complete — 5/6 passed, 1 skipped (503 path untested). Bugs fixed: Tweaks button overlap, phase string case mismatch, State C zIndex + result latch. 2026-05-14
-**Next action:** `/gsd-complete-milestone` — all 6 phases complete, v1 milestone ready to archive
+**Last action:** v0.5 milestone archived — all 6 phases complete, REQUIREMENTS.md removed, ROADMAP.md collapsed, git tagged v0.5. 2026-05-14
+**Next action:** `/gsd-new-milestone` — define v1.0 requirements and roadmap
 **Resumption note:** Stack: `docker compose up -d redis` + `cd backend && uv run uvicorn app.main:app --reload` + `cd frontend && npm run dev`.
