@@ -1,9 +1,9 @@
 ---
-status: diagnosed
+status: complete
 phase: 06-viewer-experience
 source: [06-VERIFICATION.md]
 started: 2026-05-12T00:00:00Z
-updated: 2026-05-14T00:00:00Z
+updated: 2026-05-14T12:00:00Z
 ---
 
 ## Current Test
@@ -26,15 +26,13 @@ result: pass
 
 ### 4. Prediction widget States A and B
 expected: During PRE-FLOP, FLOP, TURN, or RIVER — widget appears bottom-right with "WHO WINS THIS HAND?" and 4 player chips. Clicking a chip collapses to "PREDICTED:" + single chip (State B). localStorage.getItem('poker_prediction') returns JSON with prediction set.
-result: issue
-reported: "I see nothing and json returns nothing"
-severity: major
+result: pass
+note: "Initially failed due to Tweaks button overlap (zIndex 400 covering widget zIndex 30) and phase string case mismatch (backend lowercase vs frontend uppercase). Both fixed."
 
 ### 5. Prediction widget State C result reveal
 expected: At WINNER phase — widget shows ConfettiBurst + GoldCrownChip "CORRECT!" if predicted player won, or red StakeChip "WRONG" if not. Sub-label "You picked {name}" visible. This was the gap fixed by adding WINNER to PREDICTION_PHASES.
-result: blocked
-blocked_by: prior-phase
-reason: "Widget not visible in State A/B (test 4 failed) — State C cannot be verified until widget rendering is fixed"
+result: pass
+note: "Required two additional fixes: (1) phase string was 'WINNER' but backend sends 'showdown'; (2) result flash now latches for 6s at zIndex 60 to survive hand reset and winner overlay overlap."
 
 ### 6. 503 error handling on Start click
 expected: Clicking START A GAME when no SSE connection is active returns 503 from backend; button resets to "START A GAME" (not permanently frozen); no crash in console
@@ -44,9 +42,9 @@ reason: "Could not isolate the exact path (no-SSE-client + click START). Adjacen
 ## Summary
 
 total: 6
-passed: 3
-issues: 1
-blocked: 1
+passed: 5
+issues: 0
+blocked: 0
 skipped: 1
 
 ## Gaps

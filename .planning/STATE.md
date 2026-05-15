@@ -1,7 +1,7 @@
 # Project State
 
 ## Current Phase
-Phase 6 — Viewer Experience (context gathered, ready to plan)
+Phase 6 — Viewer Experience (3 plans ready to execute)
 
 ## Project Reference
 See: .planning/PROJECT.md
@@ -18,7 +18,7 @@ See: .planning/PROJECT.md
 | 3 | SSE Broadcast | Complete ✓ | EventBroker, publisher, SSE endpoint, 6 tests — SC-1–4 human verified 2026-05-06 |
 | 4 | LLM Integration | Complete ✓ | ai/ package, SSE envelope, decision closure, game wiring, tests — human UAT passed 2026-05-09 |
 | 5 | Frontend Wiring | Complete ✓ | Vite SPA scaffold, CORS + reasoning snapshot, useGameStream hook — 7/8 UAT passed, 1 gap fixed 2026-05-11 |
-| 6 | Viewer Experience | Context ◆ | game_status SSE event, POST /api/game/start demand gate, prediction widget, Redis last result |
+| 6 | Viewer Experience | Complete ✓ | 5/6 UAT passed, 1 skipped — human UAT passed 2026-05-14 |
 
 ## Performance Metrics
 
@@ -76,6 +76,6 @@ None — initialization complete.
 
 ## Session Continuity
 
-**Last action:** Phase 6 context gathered — 2026-05-12
-**Next action:** `/gsd-plan-phase 6` (Viewer Experience)
-**Resumption note:** Stack: `docker compose up -d redis` + `cd backend && uv run uvicorn app.main:app --reload` + `cd frontend && npm run dev`. Phase 5 complete (3/3 plans, 7/8 UAT passed, 1 gap fixed). Phase 6 context captured in `.planning/phases/06-viewer-experience/06-CONTEXT.md` — key decisions: game_status SSE event for idle detection, asyncio.Event demand gate with POST /api/game/start, per-hand prediction widget (floating overlay), Redis game:last_result for shared last winner.
+**Last action:** Phase 6 human UAT complete — 5/6 passed, 1 skipped (503 path untested). Bugs fixed: Tweaks button overlap, phase string case mismatch, State C zIndex + result latch. 2026-05-14
+**Next action:** `/gsd-complete-milestone` — all 6 phases complete, v1 milestone ready to archive
+**Resumption note:** Stack: `docker compose up -d redis` + `cd backend && uv run uvicorn app.main:app --reload` + `cd frontend && npm run dev`.

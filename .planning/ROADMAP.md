@@ -5,9 +5,9 @@
 - [x] **Phase 1: Backend Foundation** - FastAPI project, Python environment, poker math engine, LiteLLM wiring
 - [x] **Phase 2: Game State Machine** - Full Texas Hold'em flow runnable to console with mock decisions
 - [x] **Phase 3: SSE Broadcast** - Real-time game state pushed to all viewers; late-joiner snapshot; heartbeat
-- [ ] **Phase 4: LLM Integration** - 4 AI players with archetypes, guided decisions, streaming reasoning, fallbacks
-- [ ] **Phase 5: Frontend Wiring** - Vite SPA migration, SSE wiring (replace MOCK_STATE), auto-reconnect, CORS
-- [ ] **Phase 6: Viewer Experience** - Idle screen, Start button, anonymous winner predictions
+- [x] **Phase 4: LLM Integration** - 4 AI players with archetypes, guided decisions, streaming reasoning, fallbacks
+- [x] **Phase 5: Frontend Wiring** - Vite SPA migration, SSE wiring (replace MOCK_STATE), auto-reconnect, CORS
+- [x] **Phase 6: Viewer Experience** - Idle screen, Start button, anonymous winner predictions
 
 ---
 
@@ -169,6 +169,6 @@ The "Start a Game" button triggers a POST to the FastAPI backend, which checks v
 | 1. Backend Foundation | 3/3 | Complete | 2026-05-02 |
 | 2. Game State Machine | 5/5 | Complete | 2026-05-03 |
 | 3. SSE Broadcast | 5/5 | Complete | 2026-05-06 |
-| 4. LLM Integration | 0/5 | Not started | - |
-| 5. Frontend Wiring | 3/3 | Human UAT | - |
-| 6. Viewer Experience | 0/3 | Not started | - |
+| 4. LLM Integration | 5/5 | Complete | 2026-05-09 |
+| 5. Frontend Wiring | 3/3 | Complete | 2026-05-11 |
+| 6. Viewer Experience | 3/3 | Complete | 2026-05-14 |
