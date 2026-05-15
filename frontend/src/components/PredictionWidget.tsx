@@ -16,7 +16,13 @@ interface PredictionRecord {
   result: 'correct' | 'wrong' | null
 }
 
+interface ResultFlash {
+  result: 'correct' | 'wrong'
+  playerName: string
+}
+
 const PREDICTION_KEY = 'poker_prediction'
+const RESULT_DISPLAY_MS = 6000
 
 function loadPrediction(): PredictionRecord | null {
   try {
@@ -34,7 +40,13 @@ function savePrediction(record: PredictionRecord): void {
 export default function PredictionWidget({ gameState, players }: PredictionWidgetProps) {
   const [handId] = useState(() => Date.now().toString())
   const [prediction, setPrediction] = useState<PredictionRecord | null>(() => loadPrediction())
+  const [resultFlash, setResultFlash] = useState<ResultFlash | null>(null)
   const prevWinnerRef = useRef<number | null | undefined>(undefined)
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => () => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+  }, [])
 
   // Reset prediction when a new hand starts (winner transitions from non-null to null)
   useEffect(() => {
@@ -49,7 +61,7 @@ export default function PredictionWidget({ gameState, players }: PredictionWidge
     prevWinnerRef.current = gameState.winner
   }, [gameState.winner])
 
-  // Set result when WINNER phase arrives and a prediction exists
+  // Set result at showdown and latch it for RESULT_DISPLAY_MS so it survives hand reset
   useEffect(() => {
     if (
       gameState.phase === 'showdown' &&
@@ -59,22 +71,22 @@ export default function PredictionWidget({ gameState, players }: PredictionWidge
     ) {
       const winnerPlayer = gameState.players[gameState.winner]
       const isCorrect = winnerPlayer?.id === prediction.prediction
-      const updated: PredictionRecord = {
-        ...prediction,
-        result: isCorrect ? 'correct' : 'wrong',
-      }
+      const result: 'correct' | 'wrong' = isCorrect ? 'correct' : 'wrong'
+      const pickedP = players.find(p => p.id === prediction.prediction)
+
+      const updated: PredictionRecord = { ...prediction, result }
       setPrediction(updated)
       savePrediction(updated)
+
+      setResultFlash({ result, playerName: pickedP?.name ?? prediction.prediction })
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+      flashTimerRef.current = setTimeout(() => setResultFlash(null), RESULT_DISPLAY_MS)
     }
-  }, [gameState.phase, gameState.winner, prediction])
+  }, [gameState.phase, gameState.winner, prediction, players])
 
   const handlePick = (playerId: string) => {
-    if (prediction !== null) return  // already picked
-    const record: PredictionRecord = {
-      handId,
-      prediction: playerId,
-      result: null,
-    }
+    if (prediction !== null) return
+    const record: PredictionRecord = { handId, prediction: playerId, result: null }
     setPrediction(record)
     savePrediction(record)
   }
@@ -83,7 +95,6 @@ export default function PredictionWidget({ gameState, players }: PredictionWidge
     ? players.find(p => p.id === prediction.prediction) ?? null
     : null
 
-  // Panel container style (shared across all states)
   const panelStyle: React.CSSProperties = {
     position: 'absolute',
     bottom: 16,
@@ -118,22 +129,21 @@ export default function PredictionWidget({ gameState, players }: PredictionWidge
     whiteSpace: 'nowrap',
   }
 
-  // State C — result reveal
-  if (gameState.phase === 'showdown' && prediction?.result !== null && prediction?.result !== undefined) {
+  // State C — result reveal: shown for RESULT_DISPLAY_MS after showdown, survives hand reset
+  // zIndex: 60 puts it above the winner overlay (zIndex: 50)
+  if (resultFlash !== null) {
     return (
-      <div style={{ ...panelStyle, position: 'absolute' }}>
-        {prediction.result === 'correct' && (
+      <div style={{ ...panelStyle, zIndex: 60 }}>
+        {resultFlash.result === 'correct' && (
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <ConfettiBurst />
             <GoldCrownChip size="md" label="CORRECT!" />
           </div>
         )}
-        {prediction.result === 'wrong' && (
+        {resultFlash.result === 'wrong' && (
           <StakeChip size="md" stakeColor="red" label="WRONG" />
         )}
-        {pickedPlayer && (
-          <div style={subLabelStyle}>You picked {pickedPlayer.name}</div>
-        )}
+        <div style={subLabelStyle}>You picked {resultFlash.playerName}</div>
       </div>
     )
   }
