@@ -52,7 +52,7 @@ export default function PredictionWidget({ gameState, players }: PredictionWidge
   // Set result when WINNER phase arrives and a prediction exists
   useEffect(() => {
     if (
-      gameState.phase === 'WINNER' &&
+      gameState.phase === 'showdown' &&
       prediction !== null &&
       prediction.result === null &&
       gameState.winner !== null
@@ -119,7 +119,7 @@ export default function PredictionWidget({ gameState, players }: PredictionWidge
   }
 
   // State C — result reveal
-  if (gameState.phase === 'WINNER' && prediction?.result !== null && prediction?.result !== undefined) {
+  if (gameState.phase === 'showdown' && prediction?.result !== null && prediction?.result !== undefined) {
     return (
       <div style={{ ...panelStyle, position: 'absolute' }}>
         {prediction.result === 'correct' && (

@@ -17,12 +17,14 @@ interface GameProps {
 }
 
 const PHASE_DISPLAY: Record<string, string> = {
-  DEALING: 'DEALING', 'PRE-FLOP': 'PRE-FLOP',
-  FLOP: 'THE FLOP', TURN: 'THE TURN', RIVER: 'THE RIVER',
-  SHOWDOWN: 'SHOWDOWN', WINNER: 'WINNER!',
+  'pre-flop': 'PRE-FLOP',
+  flop: 'THE FLOP',
+  turn: 'THE TURN',
+  river: 'THE RIVER',
+  showdown: 'SHOWDOWN',
 };
 
-const PREDICTION_PHASES = new Set(['PRE-FLOP', 'FLOP', 'TURN', 'RIVER', 'WINNER']);
+const PREDICTION_PHASES = new Set(['pre-flop', 'flop', 'turn', 'river', 'showdown']);
 
 export default function Game({ theme, gameState, reasoning, connectionState }: GameProps) {
   if (!gameState) {
@@ -128,7 +130,7 @@ export default function Game({ theme, gameState, reasoning, connectionState }: G
         )}
 
         {/* Winner overlay */}
-        {phase === 'WINNER' && winner !== null && (
+        {phase === 'showdown' && winner !== null && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.84)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
             <div style={{
               background: 'rgb(24,36,38)',
